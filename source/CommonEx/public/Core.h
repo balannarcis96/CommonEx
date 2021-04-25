@@ -17,7 +17,7 @@
 #define FORCEINLINE __forceinline
 #endif
 
-//Empty macro used to keep Visual Studio from indenting pointer members
+//Empty macro used to keep Visual Studio from indenting
 #define PTR
 
 namespace CommonEx {
@@ -98,5 +98,48 @@ namespace CommonEx {
 		}
 
 		static const SGUID None;
+	};
+
+	//Efficient implentation of a spin lock
+	class SpinLock {
+	public:
+		FORCEINLINE void Lock() noexcept
+		{
+			for (;;) {
+				if (!bLock.exchange(true, std::memory_order_acquire)) {
+					break;
+				}
+				while (bLock.load(std::memory_order_relaxed)) {
+					std::atomic_signal_fence(std::memory_order_seq_cst);
+					_mm_pause();
+				}
+			}
+		}
+
+		FORCEINLINE void Unlock() noexcept
+		{
+			bLock.store(false, std::memory_order_release);
+		}
+
+	private:
+		std::atomic<bool> bLock = { false };
+	};
+
+	//RAII-based spin lock guard (scope guard)
+	class SpinLockScopeGuard {
+	public:
+		FORCEINLINE explicit SpinLockScopeGuard(SpinLock* Lock) noexcept
+			:Lock(Lock)
+		{
+			Lock->Lock();
+		}
+
+		FORCEINLINE ~SpinLockScopeGuard() noexcept
+		{
+			Lock->Unlock();
+		}
+
+	private:
+		SpinLock* Lock;
 	};
 }

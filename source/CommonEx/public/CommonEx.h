@@ -1,10 +1,24 @@
 #pragma once
 
 //Verbose logging
+#ifndef RVERBOSE
 #define RVERBOSE 1
+#endif
 
 //Verbose Transport Layer(enable logging)
-#define VERBOSE_TLAYER 0
+#ifndef VERBOSE_TLAYER
+#define VERBOSE_TLAYER 1
+#endif
+
+//Enable memory statitics
+#ifndef MEMEX_STATISTICS
+#define MEMEX_STATISTICS 1
+#endif
+
+//Enable buffers statitics
+#ifndef COMMONEX_BUFFERS_STATISTICS
+#define COMMONEX_BUFFERS_STATISTICS 1
+#endif
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
 #define COMMONEX_WIN32_PLATFROM 1
@@ -15,7 +29,6 @@
 #ifndef COMMONEX_USE_DEFAULTS
 #define COMMONEX_USE_DEFAULTS 1
 #endif
-
 
 /*------------------------------------------------------------
 	Format library (fmt)
@@ -72,6 +85,7 @@ namespace CommonEx {
 #include <csignal>
 #include <time.h>
 #include <atomic>
+#include <limits>
 
 namespace CommonEx {
 	/*------------------------------------------------------------
@@ -83,11 +97,20 @@ namespace CommonEx {
 		uint8_t* Buffer{ nullptr };
 	};
 
-
 	using TClock = std::chrono::high_resolution_clock;
-#define TCLOCK_MILLIS(x)  std::chrono::milliseconds(x)
+	#define TCLOCK_MILLIS(x)  std::chrono::milliseconds(x)
+
+
+	// Global allocate block of memory
+	extern void* GAllocate(size_t BlockSize, size_t BlockAlignment) noexcept;
+
+	// Global deallocate block of memory
+	extern void GFree(void* BlockPtr) noexcept;
+
+
 }
 
+#include "Tunning.h"
 #include "RStatus.h"
 #include "Diag.h"
 #include "Platform.h"
@@ -96,4 +119,17 @@ namespace CommonEx {
 #include "Stream.h"
 #include "Worker.h"
 #include "TransportLayer.h"
+#include "Memory.h"
+#include "TObjectPool.h"
+#include "Ptr.h"
+#include "MemoryManager.h"
+
+#include "Packet.h"
+#include "Opcode.h"
+
+#include "Work.h"
+#include "Buffer.h"
+
+#include "PacketBuilder.h"
+
 #include "ConnectionEndpoint.h"
