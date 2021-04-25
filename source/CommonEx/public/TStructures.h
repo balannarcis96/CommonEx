@@ -20,8 +20,9 @@
 
 namespace CommonEx {
 	template <typename T, bool bIsFixed = false>
-	struct TStructureBase
+	class TStructureBase
 	{
+	public:
 		using MyT = T;
 		using MyTPtr = T*;
 
@@ -224,10 +225,10 @@ namespace CommonEx {
 	};
 
 	template <typename T>
-	using TVector = TStructureBase<T>;
+	using TVector = TStructureBase<T, false>;
 
 	template <typename T>
-	using TStack = TStructureBase<T>;
+	using TStack = TStructureBase<T, false>;
 
 	template <typename T, uint32_t MaxCapacity>
 	struct TArray : TStructureBase<T, true>

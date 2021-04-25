@@ -13,7 +13,8 @@ namespace CommonEx {
 	/*------------------------------------------------------------
 		Memory Manager
 	  ------------------------------------------------------------*/
-	struct MemoryManager {
+	class MemoryManager {
+	public:
 		template<typename T, size_t PoolSize>
 		using TObjectStore = TObjectPool<T, PoolSize>;
 
@@ -474,7 +475,8 @@ namespace CommonEx {
 	};
 
 	template<typename TUpper>
-	struct IResource {
+	class IResource {
+	public:
 		template<typename ...Types>
 		FORCEINLINE static MPtr<TUpper> New(Types... Args) noexcept {
 			return MemoryManager::Alloc<TUpper>(std::forward<Types...>(Args)...);

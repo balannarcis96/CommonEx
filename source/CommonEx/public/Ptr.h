@@ -109,9 +109,9 @@ namespace CommonEx {
 			return Temp;
 		}
 
-		friend struct MemoryManager;
+		friend class MemoryManager;
 		template<typename T, typename BasePtr>
-		friend struct _MPtr;
+		friend class _MPtr;
 	};
 
 	template<typename T, typename Base>
@@ -174,11 +174,11 @@ namespace CommonEx {
 			}
 		}
 
-		template<typename K, size_t PoolSize>
-		friend struct TGlobalMemoryStore;
+		template<typename K, size_t PoolSize, bool bUseSpinLock>
+		friend class TObjectPool;
 		template<typename T, typename BasePtr>
-		friend struct _MPtr;
-		friend struct MemoryManager;
+		friend class _MPtr;
+		friend class MemoryManager;
 	};
 
 #pragma endregion
@@ -266,9 +266,9 @@ namespace CommonEx {
 	protected:
 		MyBlockPtr BlockObject{ nullptr };
 
-		friend struct MemoryManager;
-		template <typename T>
-		friend struct TStructureBase;
+		friend class MemoryManager;
+		template <typename T, bool bIsFixed>
+		friend class TStructureBase;
 	};
 
 	using IMemoryBlockPtr = _TPtr<IMemoryBlock, TIMemoryBlockPtrBase>;

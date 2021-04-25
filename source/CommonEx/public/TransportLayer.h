@@ -113,7 +113,7 @@ namespace CommonEx {
 
 		inline RStatus Initialize(uint16_t Port, ulong_t Addr, TAddressFamily AdFamily = AF_INET, bool bOverlappedSocket = true) noexcept {
 #if COMMONEX_WIN32_PLATFROM
-			Socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, bOverlappedSocket ? WSA_FLAG_OVERLAPPED : 0);
+			Socket = WSASocketW(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, bOverlappedSocket ? WSA_FLAG_OVERLAPPED : 0);
 			if (Socket == INVALID_SOCKET)
 			{
 				return RFail;
@@ -189,7 +189,7 @@ namespace CommonEx {
 
 		RStatus Initialize(uint16_t Port, ulong_t Addr, AcceptHandler OnAccept, int32_t MaxPendingConnections = SOMAXCONN) noexcept {
 #if COMMONEX_WIN32_PLATFROM
-			Socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
+			Socket = WSASocketW(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
 			if (Socket == INVALID_SOCKET)
 			{
 				return RFail;
