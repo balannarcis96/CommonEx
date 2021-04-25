@@ -1,1 +1,1 @@
-# CommonEx: Shared core abstractions
+# CommonEx: Low level Server development abstractions
