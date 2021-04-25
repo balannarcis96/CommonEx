@@ -86,6 +86,7 @@ namespace CommonEx {
 #include <time.h>
 #include <atomic>
 #include <limits>
+#include <optional>
 
 namespace CommonEx {
 	/*------------------------------------------------------------
@@ -100,14 +101,11 @@ namespace CommonEx {
 	using TClock = std::chrono::high_resolution_clock;
 	#define TCLOCK_MILLIS(x)  std::chrono::milliseconds(x)
 
-
 	// Global allocate block of memory
 	extern void* GAllocate(size_t BlockSize, size_t BlockAlignment) noexcept;
 
 	// Global deallocate block of memory
 	extern void GFree(void* BlockPtr) noexcept;
-
-
 }
 
 #include "Tunning.h"
@@ -123,6 +121,7 @@ namespace CommonEx {
 #include "TObjectPool.h"
 #include "Ptr.h"
 #include "MemoryManager.h"
+#include "TStructures.h"
 
 #include "Packet.h"
 #include "Opcode.h"
@@ -133,3 +132,8 @@ namespace CommonEx {
 #include "PacketBuilder.h"
 
 #include "ConnectionEndpoint.h"
+
+namespace CommonEx {
+	//Initialize the CommonEx library
+	RStatus InitializeCommonEx(int32_t argc, const char** argv)noexcept;
+}

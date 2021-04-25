@@ -133,7 +133,7 @@ namespace CommonEx {
 			return Block + BlockSize;
 		}
 
-		FORCEINLINE void ZeroBlockMemory() noexcept {
+		FORCEINLINE void ZeroMemoryBlock() noexcept {
 			memset(
 				Block,
 				0,

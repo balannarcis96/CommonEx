@@ -86,4 +86,12 @@ namespace CommonEx {
 
 		return RSuccess;
 	}
+
+	RStatus InitializeCommonEx(int32_t argc, const char** argv)noexcept {
+
+
+
+
+		return RSuccess;
+	}
 }
