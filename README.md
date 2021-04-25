@@ -1,2 +1,1 @@
-# CommonEx
-CommonEx: Shared core abstractions
+# CommonEx: Shared core abstractions
