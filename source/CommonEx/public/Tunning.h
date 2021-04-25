@@ -61,7 +61,6 @@ namespace CommonEx {
 	/*------------------------------------------------------------
 		Recv Buffer
 	  ------------------------------------------------------------*/
-	constexpr size_t CReceiveBufferSizeMax = UINT16_MAX;
 	constexpr size_t CRecvBufferCount = 1024;
 
 #pragma endregion

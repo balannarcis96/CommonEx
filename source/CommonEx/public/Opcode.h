@@ -1,9 +1,5 @@
 #pragma once
 
-#ifdef max
-#undef max
-#endif
-
 namespace CommonEx {
 	enum Opcode : TPacketOpcode {
 		//Default opcode for stream packets (packet containing more sub packets)
@@ -15,8 +11,6 @@ namespace CommonEx {
 		//Default opcode for boardcast packets
 		Opcode_ROUTED_PACKET = 3,
 
-		Opcode_MAX = std::numeric_limits<TPacketOpcode>::max()
+		Opcode_MAX = COpcodeMaxValue
 	};
 }
-
-#define max(a,b)            (((a) > (b)) ? (a) : (b))

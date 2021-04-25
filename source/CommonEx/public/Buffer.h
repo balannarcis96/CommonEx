@@ -1,7 +1,24 @@
 #pragma once
+/**
+ * @file MemoryManager.h
+ *
+ * @brief CommonEx Buffers abstractions
+ *			-SendBufer used for sending
+ *			-RecvBuffer user for receiving
+ * 
+ *			To Allocate a SendBuffer do:	
+ *				auto Buffer = TSendBuffer::New<Type>();
+ * 				auto Buffer2 = TSendBuffer::New(1024);
+ *
+ * @author Balan Narcis
+ * Contact: balannarcis96@gmail.com
+ *
+ */
 
 namespace CommonEx {
 	struct TStream;
+
+	constexpr size_t CReceiveBufferSizeMax = CPacketMaxSize;
 
 	enum EReceiveState : int32_t
 	{

@@ -23,6 +23,18 @@ namespace CommonEx {
 	//Packet string offset value type
 	using TPacketStringOffset = TPacketOffset;
 
+#ifdef max
+#undef max
+#endif
+	//Protocol packet max size value
+	constexpr TPacketSize CPacketMaxSize = std::numeric_limits<TPacketSize>::max();
+
+	//Protocol opcode max value
+	constexpr TPacketOpcode COpcodeMaxValue = std::numeric_limits<TPacketOpcode>::max();
+
+#define max(a,b)            (((a) > (b)) ? (a) : (b))
+
+
 	//Packet header type
 	struct TPacketHeader {
 		TPacketSize		Size;
