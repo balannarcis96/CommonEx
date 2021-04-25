@@ -1,4 +1,14 @@
 #pragma once
+/**
+ * @file Win32Platform.h
+ *
+ * @brief CommonEx Win32 Platform specific abstractions
+ *
+ * @author Balan Narcis
+ * Contact: balannarcis96@gmail.com
+ *
+ */
+
 #ifdef COMMONEX_WIN32_PLATFROM
 
 #define WIN32_LEAN_AND_MEAN

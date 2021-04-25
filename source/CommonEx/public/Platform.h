@@ -1,4 +1,13 @@
 #pragma once
+/**
+ * @file Platform.h
+ *
+ * @brief CommonEx Platform specific abstractions
+ *
+ * @author Balan Narcis
+ * Contact: balannarcis96@gmail.com
+ *
+ */
 
 #if COMMONEX_WIN32_PLATFROM
 #include "Win32Platform.h"

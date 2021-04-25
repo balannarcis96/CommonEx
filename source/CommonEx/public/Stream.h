@@ -140,9 +140,6 @@ namespace CommonEx {
 			return true;
 		}
 
-		//Mocs
-		constexpr bool IsLoading() const noexcept { return true; }
-
 	protected:
 		MyPtrType				Buffer = nullptr;
 		int64_t					Size = 0;

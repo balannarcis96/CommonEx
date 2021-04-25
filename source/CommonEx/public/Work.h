@@ -1,4 +1,13 @@
 #pragma once
+/**
+ * @file Work.h
+ *
+ * @brief CommonEx Work abstraction
+ *
+ * @author Balan Narcis
+ * Contact: balannarcis96@gmail.com
+ *
+ */
 
 namespace CommonEx {
 	enum EWorkType : uint32_t
