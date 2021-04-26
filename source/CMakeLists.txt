@@ -18,14 +18,14 @@ set(CMAKE_CXX_FLAGS "/DWIN32 /D_WINDOWS /W3 /std:c++latest /MP /Oi /Ot")
 
 # Include sub-projects.
 
-#Libs
-add_subdirectory ("fmt")
-add_subdirectory ("delegate")
-
-add_subdirectory ("CommonEx")
+#ThirdPary
+add_subdirectory ("ThirdParty")
 
 set_target_properties(fmt PROPERTIES FOLDER "ThirdParty")
 set_target_properties(delegate PROPERTIES FOLDER "ThirdParty")
+
+#Libs
+add_subdirectory ("CommonEx")
 
 #set_target_properties(CommonEx PROPERTIES FOLDER "CommonEx")
 
