@@ -122,6 +122,7 @@ namespace CommonEx {
 #include "Ptr.h"
 #include "MemoryManager.h"
 #include "TStructures.h"
+#include "Task.h"
 
 #include "Packet.h"
 #include "Opcode.h"

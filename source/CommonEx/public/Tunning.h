@@ -63,5 +63,9 @@ namespace CommonEx {
 	  ------------------------------------------------------------*/
 	constexpr size_t CRecvBufferCount = 1024;
 
+	/*------------------------------------------------------------
+		TaskEx
+	  ------------------------------------------------------------*/
+	constexpr size_t CTaskExBodySize = 32;
 #pragma endregion
 }

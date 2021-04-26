@@ -7,7 +7,7 @@
  *			-TArray<T, Size> -- if Size = 0 the size must be passed to the constructor
  *			-TStack<T>
  *			-TMap<KeyType, T>
- *		* All these structure allocate memory through the MemoryManager *
+ *		* All these structures allocate memory through the MemoryManager *
  *
  *		Views:
  *			-TView<T>
@@ -36,7 +36,7 @@ namespace CommonEx {
 			(*this) = Other;
 		}
 		TStructureBase(TStructureBase&& Other) noexcept {
-			(*this) = Other;
+			(*this) = std::move(Other);
 		}
 
 		~TStructureBase() {
@@ -230,7 +230,7 @@ namespace CommonEx {
 	template <typename T>
 	using TStack = TStructureBase<T, false>;
 
-	template <typename T, uint32_t MaxCapacity>
+	template <typename T, uint32_t MaxCapacity = 0>
 	struct TArray : TStructureBase<T, true>
 	{
 		using MyBase = TStructureBase<T, true>;

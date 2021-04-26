@@ -16,7 +16,6 @@ namespace CommonEx {
 	using TStreamOffsetType = uint16_t;
 #endif
 
-
 	//Used primarely for reading, base of all streams
 	struct RStream {
 		using MyPtrType = uint8_t*;

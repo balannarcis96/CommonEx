@@ -21,4 +21,26 @@ set(CMAKE_CXX_FLAGS "/DWIN32 /D_WINDOWS /W3 /std:c++latest /MP /Oi /Ot")
 #Libs
 add_subdirectory ("fmt")
 add_subdirectory ("delegate")
+
 add_subdirectory ("CommonEx")
+
+set_target_properties(fmt PROPERTIES FOLDER "ThirdParty")
+set_target_properties(delegate PROPERTIES FOLDER "ThirdParty")
+
+#set_target_properties(CommonEx PROPERTIES FOLDER "CommonEx")
+
+#Examples
+add_subdirectory("examples")
+
+set_target_properties(AsyncIOUsage PROPERTIES FOLDER "Examples")
+set_target_properties(BasicUsage PROPERTIES FOLDER "Examples")
+set_target_properties(ConnectionUsage PROPERTIES FOLDER "Examples")
+set_target_properties(MemoryUsage PROPERTIES FOLDER "Examples")
+set_target_properties(PacketsUsage PROPERTIES FOLDER "Examples")
+set_target_properties(TaskUsage PROPERTIES FOLDER "Examples")
+set_target_properties(WorkerUsage PROPERTIES FOLDER "Examples")
+
+#Tests
+add_subdirectory("tests")
+
+set_target_properties(CommonTests PROPERTIES FOLDER "Tests")
