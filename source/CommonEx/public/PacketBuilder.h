@@ -44,7 +44,7 @@ namespace CommonEx {
 		<
 		PTR		typename Super,
 		PTR		typename PacketData,
-		PTR		size_t _PacketBaseSize,
+		PTR		size_t _PacketBaseSize = sizeof(PacketData),
 		PTR		PacketContextFlags _Flags = CDefaultPacketContextFlags,
 		PTR		TPacketOpcode _Opcode = PacketData::Opcode
 		>
@@ -61,8 +61,6 @@ namespace CommonEx {
 
 #pragma endregion
 
-			static_assert(std::is_base_of_v<PacketBaseTag, PacketData>, "ProtocolEx:PacketContext<> PacketData must be a derived class of [InternalPacketBodyBase] or [PacketDataBase]");
-
 			EntityId	TargetConnectionId = EntityId::None;
 			PacketData	Data;
 
@@ -70,8 +68,8 @@ namespace CommonEx {
 				return &Data;
 			}
 
-			FORCEINLINE size_t GetPacketSize() const noexcept {
-				return ((Super*)this)->GetPacketSize();
+			FORCEINLINE int64_t GetPacketSize() const noexcept {
+				return -1;
 			}
 
 			FORCEINLINE RStatus BuildPacket(TStream& Stream) const noexcept {
@@ -116,7 +114,7 @@ namespace CommonEx {
 			PTR									_Opcode
 			PTR								>;
 
-		FORCEINLINE size_t GetPacketSize() const noexcept {
+		FORCEINLINE int64_t GetPacketSize() const noexcept {
 			return sizeof(PacketData) + CPacketHeaderSize;
 		}
 
@@ -267,7 +265,10 @@ namespace CommonEx {
 				}
 			}
 			else {
-				const size_t PacketSize = Data.GetPacketSize();
+				const int64_t PacketSize = Data.GetPacketSize();
+				if (PacketSize < 0) {
+					PacketSize = (int64_t)TSendBuffer::DefaultBufferSize;
+				}
 
 				Buffer = TSendBuffer::New((uint32_t)PacketSize);
 				if (!Buffer.Get()) {

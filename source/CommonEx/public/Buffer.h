@@ -5,8 +5,8 @@
  * @brief CommonEx Buffers abstractions
  *			-SendBufer used for sending
  *			-RecvBuffer user for receiving
- * 
- *			To Allocate a SendBuffer do:	
+ *
+ *			To Allocate a SendBuffer do:
  *				auto Buffer = TSendBuffer::New<Type>();
  * 				auto Buffer2 = TSendBuffer::New(1024);
  *
@@ -117,7 +117,7 @@ namespace CommonEx {
 		}
 
 		//Update the interface
-		inline void Prepare() noexcept
+		FORCEINLINE void Prepare() noexcept
 		{
 			//w_u16(&Buffer, Position);
 
@@ -125,7 +125,7 @@ namespace CommonEx {
 			IBuffer.Length = Position;
 		}
 
-		inline RStatus Write(const uint8_t* Data, size_t Size) noexcept
+		FORCEINLINE RStatus Write(const uint8_t* Data, size_t Size) noexcept
 		{
 			if (!CanFit(Size))
 			{
@@ -141,20 +141,20 @@ namespace CommonEx {
 			return RSuccess;
 		}
 
-		inline void WriteCount(uint16_t Value, uint16_t Offset) noexcept
+		FORCEINLINE void WriteCount(uint16_t Value, uint16_t Offset) noexcept
 		{
 			Write(Value, Offset);
 		}
 
 		template <typename T>
-		inline void Write(const T& Value) noexcept
+		FORCEINLINE void Write(const T& Value) noexcept
 		{
 			*((T*)(GetFront())) = Value;
 			Position += sizeof(T);
 		}
 
 		template <typename Char, size_t N>
-		inline RStatus Write(const Char(&Message)[N]) noexcept
+		FORCEINLINE RStatus Write(const Char(&Message)[N]) noexcept
 		{
 			constexpr size_t StringFullSize = N * sizeof(Char);
 
@@ -170,64 +170,64 @@ namespace CommonEx {
 		}
 
 		template <typename T>
-		inline void WriteAt(const T& Value, uint16_t Offset) noexcept
+		FORCEINLINE void WriteAt(const T& Value, uint16_t Offset) noexcept
 		{
 			*((T*)(GetBuffer() + Offset)) = Value;
 		}
 
-		inline uint8_t* GetBuffer() noexcept
+		FORCEINLINE uint8_t* GetBuffer() noexcept
 		{
 			return Buffer;
 		}
 
-		inline const uint8_t* GetBuffer() const noexcept
+		FORCEINLINE const uint8_t* GetBuffer() const noexcept
 		{
 			return Buffer;
 		}
 
 		//Get the buffer at the position of the next write
-		inline uint8_t* GetFront() noexcept
+		FORCEINLINE uint8_t* GetFront() noexcept
 		{
 			return Buffer + Position;
 		}
 
 		//Get the buffer at the position of the next write
-		inline const uint8_t* GetFront() const noexcept
+		FORCEINLINE const uint8_t* GetFront() const noexcept
 		{
 			return Buffer + Position;
 		}
 
 		//Get remaning usable space in the buffer
-		inline uint32_t GetRemaining() const noexcept
+		FORCEINLINE uint32_t GetRemaining() const noexcept
 		{
 			return BufferSize - Position;
 		}
 
 		//Get written ammount
-		inline uint32_t GetSize() const noexcept
+		FORCEINLINE uint32_t GetSize() const noexcept
 		{
 			return Position;
 		}
 
-		inline CommonEx::IBuffer& GetInterface() noexcept
+		FORCEINLINE CommonEx::IBuffer& GetInterface() noexcept
 		{
 			return IBuffer;
 		}
 
-		inline const CommonEx::IBuffer& GetInterface() const noexcept
+		FORCEINLINE const CommonEx::IBuffer& GetInterface() const noexcept
 		{
 			return IBuffer;
 		}
 
-		//Can the buffer fit [Size] byts
-		inline bool CanFit(uint32_t Size) const noexcept
+		//Can the buffer fit [Size] bytes
+		FORCEINLINE bool CanFit(uint32_t Size) const noexcept
 		{
 			return GetRemaining() >= Size;
 		}
 
 		//Returns TStream(this)
 		//  If CurrentPositionAsBase = true , the TStream is based at the sendBuffer current position.
-		TStream ToStream(bool CurrentPositionAsBase = true) noexcept;
+		FORCEINLINE TStream ToStream(bool CurrentPositionAsBase = true) noexcept;
 
 		friend TStream;
 	};
@@ -318,7 +318,7 @@ namespace CommonEx {
 	  ------------------------------------------------------------*/
 	struct TStream : public IStream
 	{
-		TStream(ISendBuffer* Buffer, bool CurrentPositionAsBase) : IStream(Buffer->GetFront(), Buffer->GetRemaining(), 0)
+		FORCEINLINE TStream(ISendBuffer* Buffer, bool CurrentPositionAsBase) noexcept : IStream(Buffer->GetFront(), Buffer->GetRemaining(), 0)
 		{
 #if DEBUG_STREAMS
 			assert(
@@ -328,13 +328,22 @@ namespace CommonEx {
 
 			Stream = Buffer;
 		}
-		TStream(TStream&& Other) noexcept : IStream(std::move(Other))
+		FORCEINLINE TStream(TStream&& Other) noexcept : IStream(std::move(Other))
 		{
 			Stream = Other.Stream;
 		}
 
+		~TStream()
+		{
+			if (Stream)
+			{
+				Commit();
+				Release();
+			}
+		}
+
 		//Takes ownership of the Other.Stream
-		inline TStream& operator=(TStream&& Other) noexcept
+		TStream& operator=(TStream&& Other) noexcept
 		{
 			if (this == &Other)
 			{
@@ -358,7 +367,7 @@ namespace CommonEx {
 		//	If Rebase is true, after Commiting the
 		//	instance, the Buffer(ptr) is pushed forward by the commited ammout
 		//	and the Position is reseted to 0
-		inline void Commit(bool Rebase = true) noexcept
+		FORCEINLINE void Commit(bool Rebase = true) noexcept
 		{
 #if DEBUG_STREAMS
 			assert(Stream.Get() != nullptr);
@@ -378,7 +387,7 @@ namespace CommonEx {
 		//	If Rebase is true, after Commiting the
 		//	instance, the Buffer(ptr) is pushed forward by the commited ammout
 		//	and the Position is reseted to 0
-		inline void CommitPacket(bool Rebase = true) noexcept
+		FORCEINLINE void CommitPacket(bool Rebase = true) noexcept
 		{
 			WriteAt((TPacketSize)GetPosition(), 0); //we write the current position as the size of the packet
 
@@ -386,7 +395,7 @@ namespace CommonEx {
 		}
 
 		//"Rolls back" changes by reseting the Position to 0
-		inline void Rollback() noexcept
+		FORCEINLINE void Rollback() noexcept
 		{
 #if DEBUG_STREAMS
 			assert(Stream.Get() != nullptr);
@@ -395,19 +404,72 @@ namespace CommonEx {
 			Position = 0;
 		}
 
-		inline void Release() noexcept
+		FORCEINLINE void Release() noexcept
 		{
 			IStream::Release();
 			Stream = nullptr;
 		}
 
-		~TStream()
-		{
-			if (Stream)
-			{
-				Commit();
-				Release();
-			}
+		//Writes the hader to the stream and returns a ref to it, use the ref to write back the offset and if needed the count
+		FORCEINLINE TPacketObjectArrayHeader& WriteArrayRef(TPacketSize ObjectCount = 0)noexcept {
+			TPacketObjectArrayHeader& Header = *(TPacketObjectArrayHeader*)GetFront();
+
+			Write(TPacketObjectArrayHeader());
+
+			Header.Count = ObjectCount;
+
+			return Header;
+		}
+
+		//Allocates sizeof(TStreamOffsetType) bytes into the stream and returns a ref to it, use it to write back the offset to the string
+		// String eg.
+		//		auto& UsernameRef = Stream.WriteStringRef();
+		//		... //write more to the stream
+		//		Stream.WriteString(UsernameRef, "String");
+		//
+		FORCEINLINE TStreamOffsetType& WriteStringRef()noexcept {
+			TStreamOffsetType& Offset = *(TStreamOffsetType*)GetFront();
+
+			Write(TStreamOffsetType());
+
+			return Offset;
+		}
+				
+		FORCEINLINE RStatus WriteString(TStreamOffsetType& WriteBackOffset, const char* String, bool bWriteEmptyIfNull = true) noexcept {
+			SubmitOffset(WriteBackOffset);
+
+			return IStream::WriteString(String, bWriteEmptyIfNull);
+		}
+		FORCEINLINE RStatus WriteString(TStreamOffsetType& WriteBackOffset, const char* String, int32_t MaxLength, bool bWriteEmptyIfNull = true) noexcept {
+			SubmitOffset(WriteBackOffset);
+
+			return IStream::WriteString(String, MaxLength, bWriteEmptyIfNull);
+		}
+		FORCEINLINE RStatus WriteString(TStreamOffsetType& WriteBackOffset, int32_t StringLength, const char* String, bool bWriteEmptyIfNull = true) noexcept {
+			SubmitOffset(WriteBackOffset);
+
+			return IStream::WriteString(StringLength, String, bWriteEmptyIfNull);
+		}
+
+		FORCEINLINE RStatus WriteWString(TStreamOffsetType& WriteBackOffset, const wchar_t* String, bool bWriteEmptyIfNull = true) noexcept {
+			SubmitOffset(WriteBackOffset);
+
+			return IStream::WriteWString(String, bWriteEmptyIfNull);
+		}
+		FORCEINLINE RStatus WriteWString(TStreamOffsetType& WriteBackOffset, const wchar_t* String, int32_t MaxLengthInWchar_t, bool bWriteEmptyIfNull = true) noexcept {
+			SubmitOffset(WriteBackOffset);
+
+			return IStream::WriteWString(String, MaxLengthInWchar_t, bWriteEmptyIfNull);
+		}
+		FORCEINLINE RStatus WriteWString(TStreamOffsetType& WriteBackOffset, int32_t StringLengthInWchar_t, const wchar_t* String, bool bWriteEmptyIfNull = true) noexcept {
+			SubmitOffset(WriteBackOffset);
+
+			return IStream::WriteWString(StringLengthInWchar_t, String, bWriteEmptyIfNull);
+		}
+
+		//Target = GetPosition();
+		FORCEINLINE void SubmitOffset(TStreamOffsetType& Target) const noexcept {
+			Target = (TStreamOffsetType)GetPosition();
 		}
 
 	private:
@@ -416,7 +478,7 @@ namespace CommonEx {
 
 	//SendBuffer::ToStream
 	template <uint32_t Size>
-	inline TStream SendBuffer<Size>::ToStream(bool CurrentPositionAsBase) noexcept
+	FORCEINLINE TStream SendBuffer<Size>::ToStream(bool CurrentPositionAsBase) noexcept
 	{
 		return TStream(reinterpret_cast<ISendBuffer*>(this), CurrentPositionAsBase);
 	}

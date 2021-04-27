@@ -20,6 +20,8 @@ namespace CommonEx {
 		AcquireFailed,
 		ConnectionLost,
 		Aborted,
+		InvalidParameters,
+		OperationOverflows,
 
 		//Custom
 
@@ -34,6 +36,8 @@ namespace CommonEx {
 	constexpr RStatus RAcquireFailed{ RStatus::AcquireFailed };
 	constexpr RStatus RConnectionLost{ RStatus::ConnectionLost };
 	constexpr RStatus RAborted{ RStatus::Aborted };
+	constexpr RStatus RInvalidParameters{ RStatus::InvalidParameters };
+	constexpr RStatus ROperationOverflows{ RStatus::OperationOverflows };
 
 	inline bool operator!(const RStatus& Status) noexcept {
 		return Status != RSuccess;

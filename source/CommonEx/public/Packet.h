@@ -37,23 +37,23 @@ namespace CommonEx {
 
 	//Packet header type
 	struct TPacketHeader {
-		TPacketSize		Size;
-		TPacketOpcode	Opcode;
+		TPacketSize		Size{ 0 };
+		TPacketOpcode	Opcode{ 0 };
 	};
 
 	//Header struct for array of objects inside the packet
 	struct TPacketObjectArrayHeader {
-		TPacketSize		Count;
-		TPacketOffset	Offset;
+		TPacketSize		Count{ 0 };
+		TPacketOffset	Offset{ 0 };
 	};
 
 	using TPacketStringRef = TPacketObjectArrayHeader;
 
 	template<typename T>
 	struct TPacketArrayItem {
-		TPacketOffset	OffsetToBase;
-		TPacketOffset	OffsetToNext;
-		T				Item;
+		TPacketOffset	OffsetToBase{ 0 };
+		TPacketOffset	OffsetToNext{ 0 };
+		T				Item{};
 
 		inline T& operator->() noexcept {
 			return Item;
@@ -104,4 +104,12 @@ namespace CommonEx {
 			return RStream((uint8_t*)GetRaw<uint8_t>(), (int64_t)PacketSize, (int64_t)0);
 		}
 	};
+
+	//packet used over the WAN (client packets)
+	template<TPacketOpcode PacketOpcode, bool _HasWriteMethod = false>
+	using ExternalPacket = PacketBodyBase<PacketOpcode, _HasWriteMethod>;
+
+	//packets used over the LAN (internal architecture packets, eg server <-> server, server <-> tool
+	template<TPacketOpcode PacketOpcode, bool _HasWriteMethod = false>
+	using InternalPacket = PacketBodyBase<PacketOpcode, _HasWriteMethod>;
 }
