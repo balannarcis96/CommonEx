@@ -5,7 +5,6 @@
 # protocol descriptor file format example
 .ProtocolVersion=1.0
 .Version=1.4
-.MaxSize=23
 
 .opcodes ClientOpcodes
 {
