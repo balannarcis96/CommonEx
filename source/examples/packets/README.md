@@ -1,6 +1,45 @@
 # packets usage example
 
 # TODO: write a node js module to generate the packet data and contexts from some decriptor files !
+```
+# protocol descriptor file format example
+.ProtocolVersion=1.0
+.Version=1.4
+.MaxSize=23
+
+.opcodes ClientOpcodes
+{
+	Client_Login,
+	Server_CharacterList
+	# etc
+}
+
+.struct Character
+{
+	int32  				Id;
+	wstring				Name;
+	int32				GuildId;
+	int32				ZoneId;
+	int32				ContinentId;
+	float				Height;
+	# etc
+}
+
+.packet ServerUserList<Server_CharacterList> 
+{
+	bool				bIsVip
+	Array<Character> 	Characters
+}
+
+.packet ClientLogin<ClientLogin> 
+{
+	int32 				ClientVersion
+	wstring				ClientUsername
+	wstring				ClientPasswordHash
+	uint64				ClientTime;
+}
+
+```
 
 ```cpp
 //Usage 1
