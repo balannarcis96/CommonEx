@@ -32,9 +32,9 @@
 
 .packet ClientLogin<ClientLogin> 
 {
-	int32 				ClientVersion
-	wstring				ClientUsername
-	wstring				ClientPasswordHash
+	int32 				Version
+	wstring				Username
+	wstring				PasswordHash
 	uint64				ClientTime;
 }
 
