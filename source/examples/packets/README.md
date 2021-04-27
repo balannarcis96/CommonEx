@@ -24,13 +24,13 @@
 	# etc
 }
 
-.packet ServerUserList<Server_CharacterList> 
+.packet ServerUserList<ClientOpcodes::Server_CharacterList> 
 {
 	bool				bIsVip
 	Array<Character> 	Characters
 }
 
-.packet ClientLogin<ClientLogin> 
+.packet ClientLogin<ClientOpcodes::ClientLogin> 
 {
 	int32 				Version
 	wstring				Username
