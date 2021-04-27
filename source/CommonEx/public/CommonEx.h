@@ -88,6 +88,26 @@ namespace CommonEx {
 #include <limits>
 #include <optional>
 
+//## From vcruntime
+// [[nodiscard]] attributes on STL functions
+#ifndef _HAS_NODISCARD
+#ifndef __has_cpp_attribute
+#define _HAS_NODISCARD 0
+#elif __has_cpp_attribute(nodiscard) >= 201603L // TRANSITION, VSO#939899 (need toolset update)
+#define _HAS_NODISCARD 1
+#else
+#define _HAS_NODISCARD 0
+#endif
+#endif // _HAS_NODISCARD
+
+#ifndef _NODISCARD
+#if _HAS_NODISCARD
+#define _NODISCARD [[nodiscard]]
+#else // ^^^ CAN HAZ [[nodiscard]] / NO CAN HAZ [[nodiscard]] vvv
+#define _NODISCARD
+#endif // _HAS_NODISCARD
+#endif // _HAS_NODISCARD
+
 namespace CommonEx {
 	/*------------------------------------------------------------
 		Buffer interface
@@ -123,18 +143,15 @@ namespace CommonEx {
 #include "MemoryManager.h"
 #include "TStructures.h"
 #include "Task.h"
-
 #include "Packet.h"
 #include "Opcode.h"
-
 #include "Work.h"
 #include "Buffer.h"
-
 #include "PacketBuilder.h"
-
 #include "ConnectionEndpoint.h"
 
 namespace CommonEx {
 	//Initialize the CommonEx library
 	RStatus InitializeCommonEx(int32_t argc, const char** argv)noexcept;
+	RStatus ShutdownCommonEx()noexcept;
 }

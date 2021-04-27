@@ -57,6 +57,21 @@ namespace CommonEx {
 	//Global diagnostic and logging tool
 	GlobalDiagnostics GlobalDiagnostics::GDiag;
 
+	RStatus GlobalDiagnostics::BuildRStatusDescriptions()
+	{
+		RStatusDesc[(int32_t)RStatus::Success] = "Operation succeeded";
+		RStatusDesc[(int32_t)RStatus::Fail] = "Operation failed";
+		RStatusDesc[(int32_t)RStatus::Aborted] = "Operation aborted";
+		RStatusDesc[(int32_t)RStatus::AcquireFailed] = "Acquire failed";
+		RStatusDesc[(int32_t)RStatus::AlreadyPerformed] = "Operation already performed";
+		RStatusDesc[(int32_t)RStatus::ConnectionLost] = "Connection lost";
+		RStatusDesc[(int32_t)RStatus::NotImplemented] = "Operation not implemented";
+		RStatusDesc[(int32_t)RStatus::Timedout] = "Operation timedout";
+		RStatusDesc[(int32_t)RStatus::WorkRemains] = "Operation not completly finished";
+
+		return RSuccess;
+	}
+
 	RStatus GlobalDiagnostics::Initialize() noexcept
 	{
 		//Hook sinals
@@ -79,18 +94,22 @@ namespace CommonEx {
 
 		return RSuccess;
 	}
+}
 
-	RStatus GlobalDiagnostics::BuildRStatusDescriptions()
+//CommonEx.h
+namespace CommonEx {
+	RStatus InitializeCommonEx(int32_t argc, const char** argv)noexcept
 	{
-		RStatusDesc[(int32_t)RStatus::Fail] = "General failure";
+		R_TRY_L(MemoryManager::Initialize(), "InitializeCommonEx() -> Failed to MemoryManager::Initialize() !") {}
+		R_TRY_L(GlobalDiagnostics::GDiag.Initialize(), "InitializeCommonEx() -> Failed to GlobalDiagnostics::Initialize()() !") {}
 
 		return RSuccess;
 	}
 
-	RStatus InitializeCommonEx(int32_t argc, const char** argv)noexcept {
-
-
-
+	RStatus ShutdownCommonEx()noexcept
+	{
+		R_TRY_L(MemoryManager::Shutdown(), "ShutdownCommonEx() -> Failed to MemoryManager::Shutdown() !") {}
+		R_TRY_L(GlobalDiagnostics::GDiag.Shutdown(), "InitializeCommonEx() -> Failed to GlobalDiagnostics::Shutdown()() !") {}
 
 		return RSuccess;
 	}

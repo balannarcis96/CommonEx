@@ -55,24 +55,24 @@ namespace CommonEx {
 			{}
 		};
 
-		static int Initialize() noexcept {
+		static RStatus Initialize() noexcept {
 			if (!SmallBlock::Preallocate()) {
-				return 1;
+				return RFail;
 			}
 			if (!MediumBlock::Preallocate()) {
-				return 2;
+				return RFail;
 			}
 			if (!LargeBlock::Preallocate()) {
-				return 3;
+				return RFail;
 			}
 			if (!ExtraLargeBlock::Preallocate()) {
-				return 4;
+				return RFail;
 			}
 
-			return 0;
+			return RSuccess;
 		}
-		static bool Shutdown() noexcept {
-			return true;
+		static RStatus Shutdown() noexcept {
+			return RSuccess;
 		}
 
 #ifdef MEMEX_STATISTICS
@@ -495,4 +495,16 @@ namespace CommonEx {
 			return MemoryManager::AllocSharedBuffer<TUpper>(Count);
 		}
 	};
+
+	//Creates an instance of T(args...) by allocating memory from the MemoryManager and wrapps it in a unique pointer object
+	template<typename T, typename ...Args>
+	FORCEINLINE MPtr<T> MakeUniqueManaged(Args... args) noexcept{
+		return MemoryManager::Alloc<T>(std::forward<Args...>(args)...);
+	}
+
+	//Creates an instance of T(args...) by allocating memory from the MemoryManager and wrapps it in a shared pointer object
+	template<typename T, typename ...Args>
+	FORCEINLINE MPtr<T> MakeSharedManaged(Args... args) noexcept {
+		return MemoryManager::AllocShared<T>(std::forward<Args...>(args)...);
+	}
 }

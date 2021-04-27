@@ -14,68 +14,98 @@ namespace CommonEx {
 
 	template<typename T>
 	class _TPtrBase {
+		constexpr bool bIsMemoryResource = std::is_base_of_v<MemoryResource, T>;
+
 	public:
-		FORCEINLINE T& operator*() noexcept
+		//Dereference the pointer
+		_NODISCARD FORCEINLINE T& operator*() noexcept
 		{
 			return *Ptr;
 		}
-		FORCEINLINE const T& operator*() const noexcept
+		//Dereference the pointer [const]
+		_NODISCARD FORCEINLINE const T& operator*() const noexcept
 		{
 			return *Ptr;
 		}
 
-		FORCEINLINE T* operator->() noexcept
+		//Access member
+		_NODISCARD FORCEINLINE T* operator->() noexcept
 		{
 			return Ptr;
 		}
-		FORCEINLINE const T* operator->() const noexcept
+		//Access member [const]
+		_NODISCARD FORCEINLINE const T* operator->() const noexcept
 		{
 			return Ptr;
 		}
 
-		FORCEINLINE T& operator[](size_t Index) noexcept {
+		//Array element access
+		_NODISCARD FORCEINLINE T& operator[](size_t Index) noexcept {
 			return Ptr[Index];
 		}
-		FORCEINLINE const T& operator[](size_t Index) const noexcept {
+		//Array element access [const]
+		_NODISCARD FORCEINLINE const T& operator[](size_t Index) const noexcept {
 			return Ptr[Index];
 		}
 
-		T* Get() noexcept
+		//Get the wrapped pointer
+		_NODISCARD FORCEINLINE T* Get() noexcept
 		{
 			return Ptr;
 		}
-		const T* Get() const noexcept
+		//Get the wrapped pointer [const]
+		_NODISCARD FORCEINLINE const T* Get() const noexcept
 		{
 			return Ptr;
 		}
 
-		explicit operator bool() const noexcept
-		{
-			return Ptr != nullptr;
-		}
-		FORCEINLINE bool IsNull() const noexcept
+		//Chec if the wrapped pointer is nullptr
+		_NODISCARD FORCEINLINE bool IsNull() const noexcept
 		{
 			return Ptr == nullptr;
 		}
+		//Chec if the wrapped pointer is nullptr
+		FORCEINLINE explicit operator bool() const noexcept
+		{
+			return Ptr != nullptr;
+		}
+
+		FORCEINLINE void DestroyResource()const noexcept {
+			if constexpr (bIsMemoryResource) {
+				if (this->Ptr)
+				{
+					this->Ptr->Destroy(this->Ptr, true);
+					this->Ptr = nullptr;
+				}
+			}
+			else {
+				static_assert(false, "Implement specific DestroyResource()!");
+			}
+		}
 
 	protected:
-		_TPtrBase() : Ptr(nullptr) {}
-		_TPtrBase(T* Ptr) : Ptr(Ptr) {}
+		FORCEINLINE _TPtrBase() noexcept : Ptr(nullptr) {}
+		FORCEINLINE _TPtrBase(T* Ptr) noexcept : Ptr(Ptr) {}
 
+		//The wrapped pointer
 		mutable T* PTR	Ptr{ nullptr };
 	};
 
-	template<typename T, typename Base>
+	//Unique pointer wrapper
+	template<typename T, typename Base = _TPtrBase<T>>
 	class _TPtr : public Base {
-	public:
-		_TPtr() :Base() {}
-		_TPtr(T* Ptr) :Base(Ptr) {}
 
-		//Move
-		_TPtr(_TPtr&& Other) noexcept : Base() {
-			Reset(Other.Release());
+	public:
+		//Default constructors
+		FORCEINLINE _TPtr() noexcept :Base() {}
+		FORCEINLINE _TPtr(T* Ptr) noexcept :Base(Ptr) {}
+
+		//Can move
+		FORCEINLINE _TPtr(_TPtr&& Other) noexcept : Base() {
+			//Use move operator
+			(*this) = std::move(Other);
 		};
-		_TPtr& operator=(_TPtr&& Other) noexcept {
+		FORCEINLINE _TPtr& operator=(_TPtr&& Other) noexcept {
 			if (this == &Other) {
 				return *this;
 			}
@@ -85,28 +115,30 @@ namespace CommonEx {
 			return *this;
 		};
 
-		//Cant copy
+		//Can't copy
 		_TPtr(_TPtr&) = delete;
 		_TPtr& operator=(_TPtr&) = delete;
 
-		//Cast
+		~_TPtr() noexcept {
+			this->DestroyResource();
+		}
+
+		//Cast to other type. Last minute resort as it creates a copy of itself
+		// * Strive to just cast the internal raw pointer ie. (NewType*)TPtr.Get() else the compiler might catch it *
 		template<typename TargetType>
-		FORCEINLINE _TPtr<TargetType, Base> Cast() {
+		_NODISCARD FORCEINLINE _TPtr<TargetType, Base> Cast() noexcept {
 			return _TPtr<TargetType, Base>((TargetType*)Release());
 		}
 
-		~_TPtr() {
-			this->DestroyResource();
-		}
-
-		FORCEINLINE void Reset(T* Resource = nullptr) {
-			this->DestroyResource();
-			this->Ptr = Resource;
-		}
-		FORCEINLINE T* Release() {
+		_NODISCARD FORCEINLINE T* Release() noexcept {
 			T* Temp = this->Ptr;
 			this->Ptr = nullptr;
 			return Temp;
+		}
+
+		FORCEINLINE void Reset(T* Resource = nullptr) noexcept {
+			this->DestroyResource();
+			this->Ptr = Resource;
 		}
 
 		friend class MemoryManager;
@@ -114,18 +146,20 @@ namespace CommonEx {
 		friend class _MPtr;
 	};
 
-	template<typename T, typename Base>
+	//Shared pointer wrapper
+	// * Not thread safe, sync before copying or moving if in contention space*
+	template<typename T, typename Base = _TPtrBase<T>>
 	class _TSharedPtr : public Base {
 	public:
-		_TSharedPtr() :Base() {}
-		_TSharedPtr(T* Ptr) : Base(Ptr) {}
+		FORCEINLINE _TSharedPtr()  noexcept :Base() {}
+		FORCEINLINE _TSharedPtr(T* Ptr)  noexcept : Base(Ptr) {}
 
 		//Move
-		_TSharedPtr(_TSharedPtr&& Other) noexcept {
+		FORCEINLINE _TSharedPtr(_TSharedPtr&& Other) noexcept {
 			this->Ptr = Other.Ptr;
 			Other.Ptr = nullptr;
 		};
-		_TSharedPtr& operator=(_TSharedPtr&& Other)noexcept {
+		FORCEINLINE _TSharedPtr& operator=(_TSharedPtr&& Other)noexcept {
 			if (this == &Other) {
 				return *this;
 			}
@@ -137,11 +171,11 @@ namespace CommonEx {
 		};
 
 		//Copy
-		_TSharedPtr(const _TSharedPtr& Other) {
+		FORCEINLINE _TSharedPtr(const _TSharedPtr& Other) noexcept {
 			Other.IncRef();
 			this->Ptr = Other.Ptr;
 		};
-		_TSharedPtr& operator=(const _TSharedPtr& Other) {
+		FORCEINLINE _TSharedPtr& operator=(const _TSharedPtr& Other) noexcept {
 			if (this == &Other) {
 				return *this;
 			}
@@ -152,19 +186,20 @@ namespace CommonEx {
 			return *this;
 		};
 
-		~_TSharedPtr() {
-			ReleaseReference();
+		~_TSharedPtr()  noexcept {
+			Release();
 		}
 
-		void Release() noexcept {
+		FORCEINLINE void Release() noexcept {
 			ReleaseReference();
+			this->Ptr = nullptr;
 		}
 
 	private:
-		FORCEINLINE bool AddReference() const noexcept { // increment ref count if not zero, return true if successful
+		FORCEINLINE void AddReference() const noexcept {
 			if (this->IsNull()) { return false; }
 
-			return this->Ptr->AddReference();
+			this->Ptr->AddReference();
 		}
 		FORCEINLINE void ReleaseReference() const noexcept {
 			if (this->IsNull()) { return; }
@@ -185,24 +220,6 @@ namespace CommonEx {
 
 #pragma region _MPtr [Base of all MPtr]
 
-	template<typename T>
-	class MemoryResourcePtrBase : public _TPtrBase<T> {
-	public:
-		MemoryResourcePtrBase() noexcept : _TPtrBase<T>(nullptr) {}
-		MemoryResourcePtrBase(T* Ptr) noexcept : _TPtrBase<T>(Ptr) {}
-
-		FORCEINLINE void DestroyResource() const noexcept
-		{
-			if (this->Ptr)
-			{
-				this->Ptr->Destroy(this->Ptr, true);
-				this->Ptr = nullptr;
-			}
-		}
-	};
-
-	using TIMemoryBlockPtrBase = MemoryResourcePtrBase<IMemoryBlock>;
-
 	//Memory Block pointer abstraction
 	//It consits of 2 pointers, one to the MemoryBlock, and the other is an aligned pointer into the MemoryBlock, of type T
 	template<typename T, typename MyBlockPtr>
@@ -214,9 +231,9 @@ namespace CommonEx {
 	public:
 		using MyType = _MPtr<T, MyBlockPtr>;
 
-		_MPtr() {}
-		_MPtr(IMemoryBlock* BlockObject, T* Ptr) :_TPtrBase<T>(Ptr), BlockObject(BlockObject) {}
-		_MPtr(MyBlockPtr&& BlockObject, T* Ptr) :_TPtrBase<T>(Ptr), BlockObject(std::move(BlockObject)) {}
+		FORCEINLINE _MPtr() {}
+		FORCEINLINE _MPtr(IMemoryBlock* BlockObject, T* Ptr) :_TPtrBase<T>(Ptr), BlockObject(BlockObject) {}
+		FORCEINLINE _MPtr(MyBlockPtr&& BlockObject, T* Ptr) : _TPtrBase<T>(Ptr), BlockObject(std::move(BlockObject)) {}
 
 		//Cant copy
 		_MPtr(const _MPtr&) = delete;
@@ -242,7 +259,7 @@ namespace CommonEx {
 			return *this;
 		}
 
-		FORCEINLINE size_t GetCapacity() const noexcept {
+		_NODISCARD FORCEINLINE size_t GetCapacity() const noexcept {
 			if (this->IsNull() || BlockObject.IsNull()) { return 0; }
 
 			const auto Ptr = reinterpret_cast<uint8_t*>(this->Ptr);
@@ -250,17 +267,17 @@ namespace CommonEx {
 			return static_cast<size_t>(BlockObject->GetEnd() - BlockObject->GetBegin(static_cast<ulong_t>(Ptr - BlockObject->Block)));
 		}
 
+		_NODISCARD FORCEINLINE IMemoryBlock* GetMemoryBlock() noexcept {
+			return this->BlockObject.Ptr;
+		}
+
+		_NODISCARD FORCEINLINE const IMemoryBlock* GetMemoryBlock() const noexcept {
+			return this->BlockObject.Ptr;
+		}
+
 		FORCEINLINE void Reset() noexcept {
 			this->Ptr = nullptr;
 			BlockObject.Reset();
-		}
-
-		FORCEINLINE IMemoryBlock* GetMemoryBlock() noexcept {
-			return this->BlockObject.Ptr;
-		}
-
-		FORCEINLINE const IMemoryBlock* GetMemoryBlock() const noexcept {
-			return this->BlockObject.Ptr;
 		}
 
 	protected:
@@ -271,8 +288,8 @@ namespace CommonEx {
 		friend class TStructureBase;
 	};
 
-	using IMemoryBlockPtr = _TPtr<IMemoryBlock, TIMemoryBlockPtrBase>;
-	using IMemoryBlockSharedPtr = _TSharedPtr<IMemoryBlock, TIMemoryBlockPtrBase>;
+	using IMemoryBlockPtr = _TPtr<IMemoryBlock>;
+	using IMemoryBlockSharedPtr = _TSharedPtr<IMemoryBlock>;
 
 	//MemoryBlock unique pointer
 	template<typename T>
@@ -281,6 +298,28 @@ namespace CommonEx {
 	//MemoryBlock shared pointer
 	template<typename T>
 	using MSharedPtr = _MPtr<T, IMemoryBlockSharedPtr>;
+
+#pragma endregion
+
+#pragma region TPtr [General purpose heap smart pointers]
+
+	template<typename T>
+	using TPtr = std::unique_ptr<T>;
+
+	template<typename T>
+	using TSharedPtr = std::shared_ptr<T>;
+
+	//Creates an heap instance of T(args...) and wrapps it in a unique pointer
+	template<typename T, typename ...Args>
+	FORCEINLINE TPtr<T> MakeUnique(Args... args)noexcept {
+		return std::make_unique<T>(std::forward<Args...>(args)...);
+	}
+
+	//Creates an heap instance of T(args...) and wrapps it in a shared pointer
+	template<typename T, typename ...Args>
+	FORCEINLINE TSharedPtr<T> MakeShared(Args... args)noexcept {
+		return std::make_shared<T>(std::forward<Args...>(args)...);
+	}
 
 #pragma endregion
 }
