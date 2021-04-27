@@ -1,5 +1,7 @@
 # packets usage example
 
+# TODO: write a node js module to generate the packet data and contexts from some decriptor files !
+
 ```cpp
 //Usage 1
 void Usage1() {
