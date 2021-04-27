@@ -55,7 +55,7 @@ namespace CommonEx {
 			{}
 		};
 
-		static RStatus Initialize() noexcept {
+		_NODISCARD static RStatus Initialize() noexcept {
 			if (!SmallBlock::Preallocate()) {
 				return RFail;
 			}
@@ -71,13 +71,13 @@ namespace CommonEx {
 
 			return RSuccess;
 		}
-		static RStatus Shutdown() noexcept {
+		_NODISCARD static RStatus Shutdown() noexcept {
 			return RSuccess;
 		}
 
 #ifdef MEMEX_STATISTICS
-		static inline std::atomic<size_t> CustomSizeAllocations{ 0 };
-		static inline std::atomic<size_t> CustomSizeDeallocations{ 0 };
+		static std::atomic<size_t> CustomSizeAllocations;
+		static std::atomic<size_t> CustomSizeDeallocations;
 
 		static void PrintStatistics() {
 			LogInfo("MemoryManager ###############################################################\n");
@@ -156,7 +156,7 @@ namespace CommonEx {
 #pragma region Compiletime
 
 		template<typename T, typename ...Types>
-		inline static MSharedPtr<T> AllocShared(Types... Args) noexcept {
+		_NODISCARD static MSharedPtr<T> AllocShared(Types... Args) noexcept {
 			if constexpr (std::is_reference_v<T>) {
 				static_assert(false, "Alloc<T> Cant allocate T reference!");
 			}
@@ -198,7 +198,7 @@ namespace CommonEx {
 		}
 
 		template<typename T, typename ...Types>
-		inline static MPtr<T> Alloc(Types... Args) noexcept {
+		_NODISCARD static MPtr<T> Alloc(Types... Args) noexcept {
 			if constexpr (std::is_reference_v<T>) {
 				static_assert(false, "Alloc<T> Cant allocate T reference!");
 			}
@@ -240,7 +240,7 @@ namespace CommonEx {
 		}
 
 		template<typename T>
-		static IMemoryBlock* AllocBlock() noexcept {
+		_NODISCARD static IMemoryBlock* AllocBlock() noexcept {
 			constexpr size_t Size = sizeof(T) + alignof(T);
 
 			IMemoryBlock* NewBlockObject = nullptr;
@@ -308,13 +308,13 @@ namespace CommonEx {
 					NewBlockObject->Destroy = [](ptr_t Object, bool bCallDestructor = true) {
 						MEMORY_MANAGER_CALL_DESTRUCTOR;
 
-#ifdef MEMORY_STATISTICS
+#ifdef MEMEX_STATISTICS
 						CustomSizeDeallocations++;
 #endif
 						GFree(NewBlockObject);
 					};
 
-#ifdef MEMORY_STATISTICS
+#ifdef MEMEX_STATISTICS
 					CustomSizeAllocations++;
 #endif
 				}
@@ -326,11 +326,69 @@ namespace CommonEx {
 
 			return NewBlockObject;
 		}
+
 #pragma endregion
 
 #pragma region Runtime
+
 		template<typename T>
-		static IMemoryBlock* AllocBlock(size_t Count) noexcept {
+		_NODISCARD static MSharedPtr<T> AllocSharedBuffer(size_t Count) noexcept {
+			MPtr<T> Unique = AllocBuffer<T>(Count);
+			if (Unique.IsNull()) {
+				return { nullptr, nullptr };
+			}
+
+			T* Ptr = Unique.Get();
+			return { Unique.BlockObject.Release(), Ptr };
+		}
+
+		// Allocate T[Size] buffer
+		// bDontConstructElements - if true the call to T default constructor (for each element) wont be made
+		template<typename T, bool bDontConstructElements = false>
+		_NODISCARD static MPtr<T> AllocBuffer(const size_t Count) noexcept {
+			if constexpr (std::is_array_v<T>) {
+				static_assert(false, "Dont use AllocBuffer<T[]>(size) but use AllocBuffer<T>(size)!");
+			}
+
+			IMemoryBlock* NewBlockObject = AllocBlock<T>(Count);
+			if (!NewBlockObject) {
+				return { nullptr , nullptr };
+			}
+
+			//if we dont construct, we dont destruct 
+			if constexpr (bDontConstructElements && std::is_destructible_v<T>) {
+				NewBlockObject->bDontDestruct = true;
+			}
+
+			//Change to size in bytes
+			const size_t Size = (sizeof(T) * Count) + alignof(T);
+
+			ptr_t Ptr = reinterpret_cast<ptr_t>(NewBlockObject->Block);
+
+			//Align pointer
+			size_t Space = Size;
+			if (!std::align(alignof(T), sizeof(T), Ptr, Space)) {
+				if constexpr (!bDontConstructElements && std::is_destructible_v<T>) {
+					NewBlockObject->Destroy((ptr_t)NewBlockObject, false);
+				}
+
+				LogFatal("MemoryManager::AllocBuffer({}) Failed to std::align({}, {}, ptr, {})!", Count, alignof(T), sizeof(T), Size);
+				return { nullptr , nullptr };
+			}
+
+			if constexpr (std::is_default_constructible_v<T> && !bDontConstructElements) {
+				//Call default constructor manually for each object of the array
+				for (size_t i = 0; i < Count; i++)
+				{
+					new (reinterpret_cast<uint8_t*>(Ptr) + (sizeof(T) * i)) T();
+				}
+			}
+
+			return { NewBlockObject, reinterpret_cast<T*>(Ptr) };
+		}
+
+		template<typename T>
+		_NODISCARD static IMemoryBlock* AllocBlock(size_t Count) noexcept {
 			const size_t Size = (sizeof(T) * Count) + alignof(T);
 
 			IMemoryBlock* NewBlockObject = nullptr;
@@ -397,13 +455,13 @@ namespace CommonEx {
 					NewBlockObject->Destroy = [](ptr_t Object, bool bCallDestructor = true) {
 						MEMORY_MANAGER_CALL_DESTRUCTOR_BUFFER;
 
-#ifdef MEMORY_STATISTICS
+#ifdef MEMEX_STATISTICS
 						CustomSizeDeallocations++;
 #endif
 						GFree(NewBlockObject);
 					};
 
-#ifdef MEMORY_STATISTICS
+#ifdef MEMEX_STATISTICS
 					CustomSizeAllocations++;
 #endif
 				}
@@ -416,61 +474,6 @@ namespace CommonEx {
 			return NewBlockObject;
 		}
 
-		// Allocate T[Size] buffer
-		// bDontConstructElements - if true the call to T default constructor (for each element) wont be made
-		template<typename T, bool bDontConstructElements = false>
-		static MPtr<T> AllocBuffer(const size_t Count) noexcept {
-			if constexpr (std::is_array_v<T>) {
-				static_assert(false, "Dont use AllocBuffer<T[]>(size) but use AllocBuffer<T>(size)!");
-			}
-
-			IMemoryBlock* NewBlockObject = AllocBlock<T>(Count);
-			if (!NewBlockObject) {
-				return { nullptr , nullptr };
-			}
-
-			//if we dont construct, we dont destruct 
-			if constexpr (bDontConstructElements && std::is_destructible_v<T>) {
-				NewBlockObject->bDontDestruct = true;
-			}
-
-			//Change to size in bytes
-			const size_t Size = (sizeof(T) * Count) + alignof(T);
-
-			ptr_t Ptr = reinterpret_cast<ptr_t>(NewBlockObject->Block);
-
-			//Align pointer
-			size_t Space = Size;
-			if (!std::align(alignof(T), sizeof(T), Ptr, Space)) {
-				if constexpr (!bDontConstructElements && std::is_destructible_v<T>) {
-					NewBlockObject->Destroy((ptr_t)NewBlockObject, false);
-				}
-
-				LogFatal("MemoryManager::AllocBuffer({}) Failed to std::align({}, {}, ptr, {})!", Count, alignof(T), sizeof(T), Size);
-				return { nullptr , nullptr };
-			}
-
-			if constexpr (std::is_default_constructible_v<T> && !bDontConstructElements) {
-				//Call default constructor manually for each object of the array
-				for (size_t i = 0; i < Count; i++)
-				{
-					new (reinterpret_cast<uint8_t*>(Ptr) + (sizeof(T) * i)) T();
-				}
-			}
-
-			return { NewBlockObject, reinterpret_cast<T*>(Ptr) };
-		}
-
-		template<typename T>
-		static MSharedPtr<T> AllocSharedBuffer(size_t Count) noexcept {
-			MPtr<T> Unique = AllocBuffer<T>(Count);
-			if (Unique.IsNull()) {
-				return { nullptr, nullptr };
-			}
-
-			T* Ptr = Unique.Get();
-			return { Unique.BlockObject.Release(), Ptr };
-		}
 #pragma endregion
 	};
 
@@ -478,33 +481,33 @@ namespace CommonEx {
 	class IResource {
 	public:
 		template<typename ...Types>
-		FORCEINLINE static MPtr<TUpper> New(Types... Args) noexcept {
+		_NODISCARD FORCEINLINE static MPtr<TUpper> New(Types... Args) noexcept {
 			return MemoryManager::Alloc<TUpper>(std::forward<Types...>(Args)...);
 		}
 
 		template<typename ...Types>
-		FORCEINLINE static MSharedPtr<TUpper> NewShared(Types... Args) noexcept {
+		_NODISCARD FORCEINLINE static MSharedPtr<TUpper> NewShared(Types... Args) noexcept {
 			return MemoryManager::AllocShared<TUpper>(std::forward<Types...>(Args)...);
 		}
 
-		FORCEINLINE static MPtr<TUpper> NewArray(size_t Count) noexcept {
+		_NODISCARD FORCEINLINE static MPtr<TUpper> NewArray(size_t Count) noexcept {
 			return MemoryManager::AllocBuffer<TUpper>(Count);
 		}
 
-		FORCEINLINE static MSharedPtr<TUpper> NewSharedArray(size_t Count) noexcept {
+		_NODISCARD FORCEINLINE static MSharedPtr<TUpper> NewSharedArray(size_t Count) noexcept {
 			return MemoryManager::AllocSharedBuffer<TUpper>(Count);
 		}
 	};
 
 	//Creates an instance of T(args...) by allocating memory from the MemoryManager and wrapps it in a unique pointer object
 	template<typename T, typename ...Args>
-	FORCEINLINE MPtr<T> MakeUniqueManaged(Args... args) noexcept{
-		return MemoryManager::Alloc<T>(std::forward<Args...>(args)...);
+	_NODISCARD FORCEINLINE MPtr<T> MakeUniqueManaged(Args... args) noexcept {
+		return std::move(MemoryManager::Alloc<T>(std::forward<Args...>(args)...));
 	}
 
 	//Creates an instance of T(args...) by allocating memory from the MemoryManager and wrapps it in a shared pointer object
 	template<typename T, typename ...Args>
-	FORCEINLINE MPtr<T> MakeSharedManaged(Args... args) noexcept {
-		return MemoryManager::AllocShared<T>(std::forward<Args...>(args)...);
+	_NODISCARD FORCEINLINE MSharedPtr<T> MakeSharedManaged(Args... args) noexcept {
+		return std::move(MemoryManager::AllocShared<T>(std::forward<Args...>(args)...));
 	}
 }

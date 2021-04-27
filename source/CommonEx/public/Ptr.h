@@ -14,7 +14,7 @@ namespace CommonEx {
 
 	template<typename T>
 	class _TPtrBase {
-		constexpr bool bIsMemoryResource = std::is_base_of_v<MemoryResource, T>;
+		static const bool bIsMemoryResource = std::is_base_of_v<MemoryResourceBase, T>;
 
 	public:
 		//Dereference the pointer
@@ -225,8 +225,8 @@ namespace CommonEx {
 	template<typename T, typename MyBlockPtr>
 	class _MPtr : public _TPtrBase<T> {
 		static_assert(
-			std::is_same_v<_TPtr<IMemoryBlock, TIMemoryBlockPtrBase>, MyBlockPtr> ||
-			std::is_same_v<_TSharedPtr<IMemoryBlock, TIMemoryBlockPtrBase>, MyBlockPtr>,
+			std::is_same_v<_TPtr<IMemoryBlock>, MyBlockPtr> ||
+			std::is_same_v<_TSharedPtr<IMemoryBlock>, MyBlockPtr>,
 			"See _MPtr<T, MyBlockPtr>");
 	public:
 		using MyType = _MPtr<T, MyBlockPtr>;
@@ -311,14 +311,14 @@ namespace CommonEx {
 
 	//Creates an heap instance of T(args...) and wrapps it in a unique pointer
 	template<typename T, typename ...Args>
-	FORCEINLINE TPtr<T> MakeUnique(Args... args)noexcept {
-		return std::make_unique<T>(std::forward<Args...>(args)...);
+	_NODISCARD FORCEINLINE TPtr<T> MakeUnique(Args... args)noexcept {
+		return std::move(std::make_unique<T>(std::forward<Args...>(args)...));
 	}
 
 	//Creates an heap instance of T(args...) and wrapps it in a shared pointer
 	template<typename T, typename ...Args>
-	FORCEINLINE TSharedPtr<T> MakeShared(Args... args)noexcept {
-		return std::make_shared<T>(std::forward<Args...>(args)...);
+	_NODISCARD FORCEINLINE TSharedPtr<T> MakeShared(Args... args)noexcept {
+		return std::move(std::make_shared<T>(std::forward<Args...>(args)...));
 	}
 
 #pragma endregion

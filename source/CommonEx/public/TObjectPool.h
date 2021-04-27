@@ -24,15 +24,15 @@ namespace CommonEx {
 			using MyType = TObjectPool<T, PoolSize>;
 
 			static_assert((MyPoolSize& MyPoolMask) == 0, "TObjectPool size must be a power of 2");
+		};
 
 #ifdef MEMEX_STATISTICS
-			static inline std::atomic<size_t> TotalAllocations{ 0 };
-			static inline std::atomic<size_t> TotalDeallocations{ 0 };
+		static std::atomic<size_t> TotalAllocations;
+		static std::atomic<size_t> TotalDeallocations;
 
-			static inline std::atomic<size_t> TotalOSAllocations{ 0 };
-			static inline std::atomic<size_t> TotalOSDeallocations{ 0 };
+		static std::atomic<size_t> TotalOSAllocations;
+		static std::atomic<size_t> TotalOSDeallocations;
 #endif
-		};
 
 		//Preallocate and fill the whole Pool with [PoolSize] elements
 		static RStatus Preallocate() noexcept {
@@ -51,12 +51,12 @@ namespace CommonEx {
 
 		//Allocate raw ptr T
 		template<typename ...Types>
-		static T* NewRaw(Types... Args) noexcept {
+		_NODISCARD FORCEINLINE static T* NewRaw(Types... Args) noexcept {
 			return Allocate(std::forward<Types...>(Args)...);
 		}
 
 		//Allocate raw ptr T
-		static T* NewRaw() noexcept {
+		_NODISCARD FORCEINLINE static T* NewRaw() noexcept {
 			return Allocate();
 		}
 
@@ -95,43 +95,45 @@ namespace CommonEx {
 				GFree(PrevVal);
 
 #ifdef MEMEX_STATISTICS
-				PoolTraits::TotalOSDeallocations++;
+				TotalOSDeallocations++;
+
+				LogInfo("TObjectPool:: Freed to os!");
 #endif
 
 				return;
 			}
 
 #ifdef MEMEX_STATISTICS
-			PoolTraits::TotalDeallocations++;
+			TotalDeallocations++;
 #endif
 		}
 
 		//Get GUID of this Pool instance
-		static size_t GetPoolId() {
+		FORCEINLINE static size_t GetPoolId() {
 			return (size_t)(&PoolTraits::MyType::Preallocate);
 		}
 
 #ifdef MEMEX_STATISTICS
-		static size_t GetTotalOSDeallocations() {
-			return PoolTraits::TotalOSDeallocations;
+		FORCEINLINE static size_t GetTotalDeallocations() {
+			return TotalDeallocations.load();
 		}
 
-		static size_t GetTotalOSAllocations() {
-			return PoolTraits::TotalOSAllocations;
+		FORCEINLINE static size_t GetTotalAllocations() {
+			return TotalAllocations.load();
 		}
 
-		static size_t GetTotalDeallocations() {
-			return PoolTraits::TotalDeallocations;
+		FORCEINLINE static size_t GetTotalOSDeallocations() {
+			return TotalOSDeallocations.load();
 		}
 
-		static size_t GetTotalAllocations() {
-			return PoolTraits::TotalAllocations;
+		FORCEINLINE static size_t GetTotalOSAllocations() {
+			return TotalOSAllocations.load();
 		}
 #endif
 
 	private:
 		template<typename ...Types>
-		static T* Allocate(Types... Args) noexcept {
+		_NODISCARD static T* Allocate(Types... Args) noexcept {
 			T* Allocated{ nullptr };
 
 			if constexpr (bUseSpinLock) {
@@ -161,7 +163,9 @@ namespace CommonEx {
 				}
 
 #ifdef MEMEX_STATISTICS
-				PoolTraits::TotalOSAllocations++;
+				TotalOSAllocations++;
+
+				LogInfo("TObjectPool:: Allocated from os!");
 #endif
 			}
 
@@ -177,7 +181,7 @@ namespace CommonEx {
 			}
 
 #ifdef MEMEX_STATISTICS
-			PoolTraits::TotalAllocations++;
+			TotalAllocations++;
 #endif
 
 			return Allocated;
@@ -188,4 +192,18 @@ namespace CommonEx {
 		static	inline uint64_t  			TailPosition{ 0 };
 		static	inline SpinLock				SpinLock{ };
 	};
+
+#ifdef MEMEX_STATISTICS
+	template<typename T, size_t PoolSize, bool bUseSpinLock>
+	inline std::atomic<size_t> TObjectPool<T, PoolSize, bUseSpinLock>::TotalAllocations;
+
+	template<typename T, size_t PoolSize, bool bUseSpinLock>
+	inline std::atomic<size_t> TObjectPool<T, PoolSize, bUseSpinLock>::TotalDeallocations;
+
+	template<typename T, size_t PoolSize, bool bUseSpinLock>
+	inline std::atomic<size_t> TObjectPool<T, PoolSize, bUseSpinLock>::TotalOSAllocations;
+
+	template<typename T, size_t PoolSize, bool bUseSpinLock>
+	inline std::atomic<size_t> TObjectPool<T, PoolSize, bUseSpinLock>::TotalOSDeallocations;
+#endif
 }

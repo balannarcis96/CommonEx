@@ -11,15 +11,15 @@
 
 namespace CommonEx {
 	enum class RStatus : int32_t {
-		WorkRemains = -1,
 		Success = 0,
-		Fail = 1,
-		Timedout = 2,
-		AlreadyPerformed = 3,
-		NotImplemented = 4,
-		AcquireFailed = 5,
-		ConnectionLost = 6,
-		Aborted = 7,
+		Fail,
+		WorkRemains,
+		Timedout,
+		AlreadyPerformed,
+		NotImplemented,
+		AcquireFailed,
+		ConnectionLost,
+		Aborted,
 
 		//Custom
 

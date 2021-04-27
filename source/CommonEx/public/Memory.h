@@ -35,7 +35,7 @@ namespace CommonEx {
 		MemoryBlockDestroyCallback	Destroy{  };
 
 		template<typename T>
-		friend class MemoryResourcePtrBase;
+		friend class _TPtrBase;
 		friend class MemoryManager;
 		friend class TSendBuffer;
 		friend class TRecvBuffer;

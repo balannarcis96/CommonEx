@@ -424,7 +424,7 @@ namespace CommonEx {
 	/*------------------------------------------------------------
 		TSendBuffer (Merge of TPtr specialization and GlobalObjectStore for SendBuffer)(Source of all SendBuffer<> instances)
 	  ------------------------------------------------------------*/
-	using TSendBufferPtrBase = MemoryResourcePtrBase<ISendBuffer>;
+	class TSendBufferPtrBase : public _TPtrBase<ISendBuffer> {};
 
 #define TSEND_BUFFER_DESTROY_CALLBACK(Pool)														\
 	NewBuffer->Destroy = [](ptr_t Object, bool bCallDestructor) {								\
@@ -652,7 +652,7 @@ namespace CommonEx {
 	/*------------------------------------------------------------
 		TRecvBuffer (Merge of TPtr specialization and GlobalObjectStore for RecvBuffer)
 	  ------------------------------------------------------------*/
-	using TRecvBufferPtrBase = MemoryResourcePtrBase<RecvBuffer>;
+	class TRecvBufferPtrBase : public _TPtrBase<RecvBuffer> {};
 
 	class TRecvBuffer : public _TPtr<RecvBuffer, TRecvBufferPtrBase>
 	{

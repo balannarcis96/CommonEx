@@ -114,3 +114,11 @@ namespace CommonEx {
 		return RSuccess;
 	}
 }
+
+//MemoryManager.h
+namespace CommonEx {
+#ifdef MEMEX_STATISTICS
+	std::atomic<size_t> MemoryManager::CustomSizeDeallocations;
+	std::atomic<size_t> MemoryManager::CustomSizeAllocations;
+#endif
+}
