@@ -26,16 +26,16 @@ namespace CommonEx {
 #endif 
 
 #ifndef SmallMemBlockCount
-#define SmallMemBlockCount		  4096
+#define SmallMemBlockCount		  16384
 #endif 
 #ifndef MediumMemBlockCount
-#define MediumMemBlockCount		  4096
+#define MediumMemBlockCount		  16384
 #endif 
 #ifndef LargeMemBlockCount
-#define LargeMemBlockCount		  4096
+#define LargeMemBlockCount		  16384
 #endif 
 #ifndef ExtraLargeMemBlockCount
-#define ExtraLargeMemBlockCount   4096
+#define ExtraLargeMemBlockCount   16384
 #endif 
 
 #pragma region Buffers

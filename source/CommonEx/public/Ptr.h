@@ -280,6 +280,11 @@ namespace CommonEx {
 			BlockObject.Reset();
 		}
 
+		FORCEINLINE IMemoryBlock* Release() noexcept {
+			this->Ptr = nullptr;
+			return BlockObject.Release();
+		}
+
 	protected:
 		MyBlockPtr BlockObject{ nullptr };
 

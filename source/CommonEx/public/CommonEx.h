@@ -87,6 +87,7 @@ namespace CommonEx {
 #include <atomic>
 #include <limits>
 #include <optional>
+#include <chrono>
 
 //## From vcruntime
 // [[nodiscard]] attributes on STL functions

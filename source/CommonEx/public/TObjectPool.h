@@ -97,7 +97,7 @@ namespace CommonEx {
 #ifdef MEMEX_STATISTICS
 				TotalOSDeallocations++;
 
-				LogInfo("TObjectPool:: Freed to os!");
+				//LogInfo("TObjectPool:: Freed to os!");
 #endif
 
 				return;
@@ -165,7 +165,7 @@ namespace CommonEx {
 #ifdef MEMEX_STATISTICS
 				TotalOSAllocations++;
 
-				LogInfo("TObjectPool:: Allocated from os!");
+				//LogInfo("TObjectPool:: Allocated from os!");
 #endif
 			}
 

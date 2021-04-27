@@ -16,7 +16,7 @@ namespace CommonEx {
 	using MemoryBlockDestroyCallback = Delegate<void, ptr_t, bool>;
 
 	class MemoryResourceBase {
-	protected:
+	public:
 
 		//We store the "controll block" inside the resource's memory space
 		mutable uint32_t RefCount{ 1 };
@@ -34,11 +34,11 @@ namespace CommonEx {
 		//Destroy callback (deleter)
 		MemoryBlockDestroyCallback	Destroy{  };
 
-		template<typename T>
-		friend class _TPtrBase;
-		friend class MemoryManager;
-		friend class TSendBuffer;
-		friend class TRecvBuffer;
+		//template<typename T>
+		//friend class _TPtrBase;
+		//friend class MemoryManager;
+		//friend class TSendBuffer;
+		//friend class TRecvBuffer;
 	};
 
 	template<bool bAtomicRef = true>

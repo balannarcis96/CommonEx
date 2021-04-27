@@ -56,18 +56,10 @@ namespace CommonEx {
 		};
 
 		_NODISCARD static RStatus Initialize() noexcept {
-			if (!SmallBlock::Preallocate()) {
-				return RFail;
-			}
-			if (!MediumBlock::Preallocate()) {
-				return RFail;
-			}
-			if (!LargeBlock::Preallocate()) {
-				return RFail;
-			}
-			if (!ExtraLargeBlock::Preallocate()) {
-				return RFail;
-			}
+			R_TRY_L(SmallBlock::Preallocate(), "MemoryManager::SmallBlock Failed to preallocate!") {}
+			R_TRY_L(MediumBlock::Preallocate(), "MemoryManager::SmallBlock Failed to preallocate!") {}
+			R_TRY_L(LargeBlock::Preallocate(), "MemoryManager::SmallBlock Failed to preallocate!") {}
+			R_TRY_L(ExtraLargeBlock::Preallocate(), "MemoryManager::SmallBlock Failed to preallocate!") {}
 
 			return RSuccess;
 		}
