@@ -73,7 +73,7 @@ namespace CommonEx {
 		static const bool HasPayload = !std::is_same_v<TPayload, DummyWorkPayload>;
 
 		using MyType = AsyncWork<TPayload, TSupper>;
-		using TCompletionHandler = TaskEx<12, void(TSupper*, TPayload*, RStatus)>;
+		using TCompletionHandler = _TaskEx<12, void(TSupper*, TPayload*, RStatus)>;
 
 		TCompletionHandler	CompletionHandler;
 		TPayload			Payload{};

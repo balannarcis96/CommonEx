@@ -20,6 +20,11 @@ struct TypeA
 	int a{ 0 };
 	TypeA() { LogInfo("TypeA()"); }
 	~TypeA() { LogInfo("~TypeA()"); }
+
+	void operator()()
+	{
+		LogInfo("Yes2");
+	}
 };
 
 int32_t main(int32_t argc, const char** argv) noexcept
@@ -34,7 +39,12 @@ int32_t main(int32_t argc, const char** argv) noexcept
 		TPtr<TypeA> a{ nullptr };
 
 		{
-			TaskEx<16, void(int)> T1;
+			_TaskEx<16, void(int)> T2{ [](int) { LogInfo("T2()"); } };
+			_TaskEx<16, void(int)> T1;
+
+			T1 = T2;
+
+			T1(23);
 
 			{
 				auto d = MakeUnique<TypeA>();

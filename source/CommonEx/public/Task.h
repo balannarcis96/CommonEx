@@ -25,7 +25,7 @@ namespace CommonEx
 	class MemoryBlockBaseResource;
 
 	template<typename T> class Task;
-	template<size_t BodySize, typename T> class TaskEx;
+	template<size_t BodySize, typename T> class _TaskEx;
 
 	/*
 		Task - task object, can be initialized with a lambda object, supports any size capture pack!
@@ -181,30 +181,125 @@ namespace CommonEx
 		-important: KEEP BodySize AS LITTLE AS POSSIBLE
 	*/
 	template<size_t BodySize, typename ReturnType, typename ...Args>
-	class TaskEx<BodySize, ReturnType(Args...)>
+	class _TaskEx<BodySize, ReturnType(Args...)>
 	{
 		typedef ReturnType(*HandlerType)(ptr_t, Args...) noexcept;
-		using MyType = TaskEx<BodySize, ReturnType(Args...)>;
+		using MyType = _TaskEx<BodySize, ReturnType(Args...)>;
 
 	public:
-		~TaskEx() noexcept
+		~_TaskEx() noexcept
 		{
 			Clear();
 		}
 
-		FORCEINLINE TaskEx() noexcept {}
+		_TaskEx() noexcept {}
 
-		template<typename Lambda>
-		FORCEINLINE TaskEx(Lambda&& ByConstRef) noexcept
+		//Dont duplicate unless needed!
+		_TaskEx(const MyType& Other) = delete;
+		_TaskEx& operator=(const MyType& Other) = delete;
+
+		//Duplicate should?
+		/*FORCEINLINE _TaskEx(const MyType& Other) noexcept
 		{
-			this->BuildHandler<Lambda>(std::move(ByConstRef));
+			(*this) = Other;
+		}
+		FORCEINLINE _TaskEx& operator=(const MyType& Other) noexcept
+		{
+			if (this == &Other)
+			{
+				return *this;
+			}
+
+			if (!Other)
+			{
+				Clear();
+				return;
+			}
+
+			Handler = Other.Handler;
+			DestroyStub = Other.DestroyStub;
+
+			if (memcpy_s(
+				Body,
+				BodySize,
+				Other.Body,
+				BodySize
+			))
+			{
+				LogFatal("_TaskEx::operator=(const _Task&) Failed to mempcy_s!");
+				abort();
+			}
+
+			return *this;
+		}*/
+
+		FORCEINLINE _TaskEx(MyType&& Other) noexcept
+		{
+			(*this) = std::move(Other);
+		}
+		FORCEINLINE _TaskEx& operator=(MyType&& Other) noexcept
+		{
+			if (this == &Other)
+			{
+				return *this;
+			}
+
+			if (!Other)
+			{
+				Clear();
+				return *this;
+			}
+
+			Handler = Other.Handler;
+			DestroyStub = Other.DestroyStub;
+			
+			if (memcpy_s(
+				Body,
+				BodySize,
+				Other.Body,
+				BodySize
+			))
+			{
+				LogFatal("_TaskEx::operator=(_Task&&) Failed to mempcy_s!");
+				abort();
+			}
+
+			//not necessary
+			//Other.ZeroBody();
+			Other.Handler = nullptr;
+			Other.DestroyStub = nullptr;
+
+			return *this;
 		}
 
 		template<typename Lambda>
-		FORCEINLINE void operator=(Lambda&& ByConstRef)noexcept
+		FORCEINLINE _TaskEx(Lambda&& ByConstRef) noexcept
 		{
-			Clear();
+			static_assert(sizeof(Lambda) <= BodySize, "Lambda cannot fit into this task, please resize the task or the lambda capture scope");
+
 			this->BuildHandler<Lambda>(std::move(ByConstRef));
+		}
+
+		template<typename TLambda>
+		FORCEINLINE _TaskEx& operator=(TLambda&& Lambda)noexcept
+		{
+			if constexpr (std::is_same_v<MyType, std::decay_t<TLambda>>)
+			{
+				return (*this) = std::move(Lambda);
+			}
+			else if constexpr(std::is_functor<TLambda, ReturnType(TLambda::*)(Args...)>::value)
+			{
+				static_assert(sizeof(TLambda) <= BodySize, "Lambda cannot fit into this task, please resize the task or the lambda capture scope");
+
+				Clear();
+				this->BuildHandler<TLambda>(std::move(Lambda));
+			}
+			else
+			{
+				static_assert("Pass a functor or same type to this operator!");
+			}
+
+			return *this;
 		}
 
 		FORCEINLINE ReturnType operator()(Args... args) noexcept
@@ -314,4 +409,7 @@ namespace CommonEx
 		ptr_t				DestroyStub{ nullptr };
 		uint8_t				Body[BodySize];
 	};
+
+	template<typename FunctionType>
+	using TaskEx = _TaskEx<CTaskExBodySize, FunctionType>;
 }

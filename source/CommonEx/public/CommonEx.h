@@ -129,6 +129,7 @@ namespace CommonEx {
 	extern void GFree(void* BlockPtr) noexcept;
 }
 
+#include "TypeTraits.h"
 #include "Tunning.h"
 #include "RStatus.h"
 #include "Diag.h"

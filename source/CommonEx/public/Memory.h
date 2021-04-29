@@ -11,7 +11,7 @@
  */
 
 namespace CommonEx {
-	using MemoryBlockDestroyCallback = TaskEx<sizeof(ptr_t), void(bool)>;
+	using MemoryBlockDestroyCallback = _TaskEx<sizeof(ptr_t), void(bool)>;
 
 	//base for all Memory Resource objects
 	class MemoryResourceBase {
