@@ -51,12 +51,12 @@ namespace CommonEx {
 
 		//Allocate raw ptr T
 		template<typename ...Types>
-		_NODISCARD FORCEINLINE static T* NewRaw(Types... Args) noexcept {
-			return Allocate(std::forward<Types...>(Args)...);
+		constexpr _NODISCARD FORCEINLINE static T* NewRaw(Types... Args) noexcept {
+			return Allocate(std::forward<Types>(Args)...);
 		}
 
 		//Allocate raw ptr T
-		_NODISCARD FORCEINLINE static T* NewRaw() noexcept {
+		constexpr _NODISCARD FORCEINLINE static T* NewRaw() noexcept {
 			return Allocate();
 		}
 
@@ -133,7 +133,7 @@ namespace CommonEx {
 
 	private:
 		template<typename ...Types>
-		_NODISCARD static T* Allocate(Types... Args) noexcept {
+		_NODISCARD FORCEINLINE static T* Allocate(Types... Args) noexcept {
 			T* Allocated{ nullptr };
 
 			if constexpr (bUseSpinLock) {
@@ -177,7 +177,7 @@ namespace CommonEx {
 			}
 			else {
 				//Call constructor manually
-				new (Allocated) T(std::forward<Types...>(Args)...);
+				new (Allocated) T(std::forward<Types>(Args)...);
 			}
 
 #ifdef MEMEX_STATISTICS

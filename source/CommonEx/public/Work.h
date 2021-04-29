@@ -1,8 +1,8 @@
 #pragma once
 /**
- * @file Work.h
+ * @file AsyncWork.h
  *
- * @brief CommonEx Work abstraction
+ * @brief CommonEx AsyncWork abstraction
  *
  * @author Balan Narcis
  * Contact: balannarcis96@gmail.com
@@ -21,12 +21,17 @@ namespace CommonEx {
 		EWorkType_MAX
 	};
 
-	struct DummyWorkPayload {};
+	class DummyWorkPayload {};
 
-	struct WorkBase {
+	class AsyncWorkBase {
 	protected:
-		OsOverlappedType	WorkOverllapped{};
+#if COMMONEX_WIN32_PLATFROM
+		OsOverlappedType	WorkOverllapped;
+#else 
+#error @TODO AsyncWorkBase
+#endif
 		EWorkType			WorkType{ EWorkType_None };
+
 	public:
 		union
 		{
@@ -40,10 +45,10 @@ namespace CommonEx {
 			};
 			uint32_t		WorkFlags{ 0 };
 		};
+
 		uint32_t			NoOfBytesTransferred{ 0 };
 
-	protected:
-		WorkBase(EWorkType WorkType)
+		FORCEINLINE AsyncWorkBase(EWorkType WorkType) noexcept
 			:WorkType(WorkType)
 			, WorkFlags(0)
 		{
@@ -51,58 +56,60 @@ namespace CommonEx {
 		}
 
 	public:
-		inline EWorkType GetWorkType() const noexcept
+		FORCEINLINE EWorkType GetWorkType() const noexcept
 		{
 			return WorkType;
 		}
-		inline uint32_t GetNoOfBytesTransferred() const noexcept { return NoOfBytesTransferred; }
+		FORCEINLINE uint32_t GetNoOfBytesTransferred() const noexcept { return NoOfBytesTransferred; }
 	};
 
 	/*------------------------------------------------------------
-		Work (All work items base)
+		AsyncWork (All work items base)
 	  ------------------------------------------------------------*/
-	template<typename TPayload, typename TSupper>
-	struct Work : WorkBase
+	template<typename TSupper, class TPayload = DummyWorkPayload>
+	class AsyncWork : public AsyncWorkBase
 	{
+	public:
 		static const bool HasPayload = !std::is_same_v<TPayload, DummyWorkPayload>;
 
-		using MyType = Work<TPayload, TSupper>;
-		using CompletionHandler = Delegate<void, TSupper*, TPayload*, RStatus>;
+		using MyType = AsyncWork<TPayload, TSupper>;
+		using TCompletionHandler = TaskEx<12, void(TSupper*, TPayload*, RStatus)>;
 
-		CompletionHandler	CompleteHandler;
+		TCompletionHandler	CompletionHandler;
 		TPayload			Payload{};
 
-	public:
-		Work(EWorkType WorkType)
-			: WorkBase(WorkType)
+		FORCEINLINE AsyncWork(EWorkType WorkType) noexcept
+			: AsyncWorkBase(WorkType)
 		{
 			bHasPayload = HasPayload;
 			memset(&WorkOverllapped, 0, sizeof(OsOverlappedType));
 		}
-		Work(const Work& Other)
-			: WorkBase(WorkType)
+		FORCEINLINE AsyncWork(const AsyncWork& Other) noexcept
+			: AsyncWorkBase(WorkType)
 		{
 			memset(&WorkOverllapped, 0, sizeof(OsOverlappedType));
 		}
 
-		inline TPayload* GetPayload() {
+		~AsyncWork() noexcept {}
+
+		FORCEINLINE TPayload* GetPayload() noexcept {
 			return &Payload;
 		}
-		inline bool SetCompletionHandler(CompletionHandler&& Handler) noexcept {
-			CompleteHandler = std::move(Handler);
+		FORCEINLINE bool SetCompletionHandler(TCompletionHandler&& Handler) noexcept {
+			CompletionHandler = std::move(Handler);
 
 			bHasCompletionHandler = true;
 
 			return true;
 		}
-		inline void CompleteWork(RStatus Result, uint32_t NoOfBytesTransferred) noexcept
+		FORCEINLINE void CompleteWork(RStatus Result, uint32_t NoOfBytesTransferred) noexcept
 		{
 			this->NoOfBytesTransferred = NoOfBytesTransferred;
 
-			CompleteHandler((TSupper*)this, &Payload, Result);
+			CompletionHandler((TSupper*)this, &Payload, Result);
 		}
 
-		inline Work& operator=(const Work& Other) noexcept
+		FORCEINLINE AsyncWork& operator=(const AsyncWork& Other) noexcept
 		{
 			if (this == &Other)
 			{
@@ -115,7 +122,7 @@ namespace CommonEx {
 
 			return *this;
 		}
-		inline Work& operator=(Work&& Other) noexcept
+		FORCEINLINE AsyncWork& operator=(AsyncWork&& Other) noexcept
 		{
 			if (this == &Other)
 			{
@@ -130,13 +137,14 @@ namespace CommonEx {
 		}
 	};
 
-	struct IWork : Work<DummyWorkPayload, IWork> {};
+	class IWork : public AsyncWork<IWork> {};
 
-	//Any work, (execute the completion handler async)
-	struct AnyWork : Work<DummyWorkPayload, IWork> {
-		using Base = Work<DummyWorkPayload, IWork>;
+	//Any work (execute the completion handler async)
+	class AnyWorkAsync : public AsyncWork<AnyWorkAsync> {
+	public:
+		using Base = AsyncWork<AnyWorkAsync>;
 
-		AnyWork(Base::CompletionHandler&& CompletionHandler) : Work(EWorkType_Any) {
+		AnyWorkAsync(Base::TCompletionHandler&& CompletionHandler) noexcept : Base(EWorkType_Any) {
 			SetCompletionHandler(std::move(CompletionHandler));
 		}
 	};

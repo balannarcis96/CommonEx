@@ -52,22 +52,24 @@ namespace CommonEx {
 
 	static inline std::string BuildTimeHeader(const char* Message, fmt::terminal_color color /*@TODO coloring*/) noexcept {
 		time_t now = time(0);
-		tm* ltm = localtime(&now);
+		tm ltm;
+		localtime_s(&ltm, &now);
 
 		std::string Header = fmt::format(
 			"[{}:{}:{}] {}:",
-			ltm->tm_hour, ltm->tm_min, ltm->tm_sec, Message);
+			ltm.tm_hour, ltm.tm_min, ltm.tm_sec, Message);
 
 		return std::move(Header);
 	}
 
 	static inline std::wstring BuildTimeHeaderW(const wchar_t* Message, fmt::terminal_color color /*@TODO coloring*/)  noexcept {
 		time_t now = time(0);
-		tm* ltm = localtime(&now);
+		tm ltm;
+		localtime_s(&ltm, &now);
 
 		std::wstring Header = fmt::format(
 			L"[{}:{}:{}] {}:",
-			ltm->tm_hour, ltm->tm_min, ltm->tm_sec, Message);
+			ltm.tm_hour, ltm.tm_min, ltm.tm_sec, Message);
 
 		return std::move(Header);
 	}

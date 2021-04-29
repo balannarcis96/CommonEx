@@ -74,7 +74,7 @@ namespace CommonEx {
 			if constexpr (bIsMemoryResource) {
 				if (this->Ptr)
 				{
-					this->Ptr->Destroy(this->Ptr, true);
+					this->Ptr->Destroy(true);
 					this->Ptr = nullptr;
 				}
 			}
@@ -225,14 +225,14 @@ namespace CommonEx {
 	template<typename T, typename MyBlockPtr>
 	class _MPtr : public _TPtrBase<T> {
 		static_assert(
-			std::is_same_v<_TPtr<IMemoryBlock>, MyBlockPtr> ||
-			std::is_same_v<_TSharedPtr<IMemoryBlock>, MyBlockPtr>,
+			std::is_same_v<_TPtr<MemoryBlockBaseResource>, MyBlockPtr> ||
+			std::is_same_v<_TSharedPtr<MemoryBlockBaseResource>, MyBlockPtr>,
 			"See _MPtr<T, MyBlockPtr>");
 	public:
 		using MyType = _MPtr<T, MyBlockPtr>;
 
 		FORCEINLINE _MPtr() {}
-		FORCEINLINE _MPtr(IMemoryBlock* BlockObject, T* Ptr) :_TPtrBase<T>(Ptr), BlockObject(BlockObject) {}
+		FORCEINLINE _MPtr(MemoryBlockBaseResource* BlockObject, T* Ptr) :_TPtrBase<T>(Ptr), BlockObject(BlockObject) {}
 		FORCEINLINE _MPtr(MyBlockPtr&& BlockObject, T* Ptr) : _TPtrBase<T>(Ptr), BlockObject(std::move(BlockObject)) {}
 
 		//Cant copy
@@ -267,11 +267,11 @@ namespace CommonEx {
 			return static_cast<size_t>(BlockObject->GetEnd() - BlockObject->GetBegin(static_cast<ulong_t>(Ptr - BlockObject->Block)));
 		}
 
-		_NODISCARD FORCEINLINE IMemoryBlock* GetMemoryBlock() noexcept {
+		_NODISCARD FORCEINLINE MemoryBlockBaseResource* GetMemoryBlock() noexcept {
 			return this->BlockObject.Ptr;
 		}
 
-		_NODISCARD FORCEINLINE const IMemoryBlock* GetMemoryBlock() const noexcept {
+		_NODISCARD FORCEINLINE const MemoryBlockBaseResource* GetMemoryBlock() const noexcept {
 			return this->BlockObject.Ptr;
 		}
 
@@ -280,7 +280,7 @@ namespace CommonEx {
 			BlockObject.Reset();
 		}
 
-		FORCEINLINE IMemoryBlock* Release() noexcept {
+		FORCEINLINE MemoryBlockBaseResource* Release() noexcept {
 			this->Ptr = nullptr;
 			return BlockObject.Release();
 		}
@@ -293,8 +293,8 @@ namespace CommonEx {
 		friend class TStructureBase;
 	};
 
-	using IMemoryBlockPtr = _TPtr<IMemoryBlock>;
-	using IMemoryBlockSharedPtr = _TSharedPtr<IMemoryBlock>;
+	using IMemoryBlockPtr = _TPtr<MemoryBlockBaseResource>;
+	using IMemoryBlockSharedPtr = _TSharedPtr<MemoryBlockBaseResource>;
 
 	//MemoryBlock unique pointer
 	template<typename T>
@@ -317,13 +317,13 @@ namespace CommonEx {
 	//Creates an heap instance of T(args...) and wrapps it in a unique pointer
 	template<typename T, typename ...Args>
 	_NODISCARD FORCEINLINE TPtr<T> MakeUnique(Args... args)noexcept {
-		return std::move(std::make_unique<T>(std::forward<Args...>(args)...));
+		return std::move(std::make_unique<T>(std::forward<Args>(args)...));
 	}
 
 	//Creates an heap instance of T(args...) and wrapps it in a shared pointer
 	template<typename T, typename ...Args>
 	_NODISCARD FORCEINLINE TSharedPtr<T> MakeShared(Args... args)noexcept {
-		return std::move(std::make_shared<T>(std::forward<Args...>(args)...));
+		return std::move(std::make_shared<T>(std::forward<Args>(args)...));
 	}
 
 #pragma endregion

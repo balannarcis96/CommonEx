@@ -43,24 +43,13 @@ namespace CommonEx {
 	};
 
 	/*------------------------------------------------------------
-		Buffers Payload
-	------------------------------------------------------------*/
-	struct SendBufferPayload {
-		EntityId	Connection{ 0 };
-		ptr_t		ConnectionPtr{ nullptr };
-	};
-
-	struct RecvBufferPayload : SendBufferPayload {
-
-	};
-
-	/*------------------------------------------------------------
 		SendBuffer (Fixed size Send Buffer)
 	  ------------------------------------------------------------*/
 	template <uint32_t _BufferSize>
-	struct SendBuffer : Work<SendBufferPayload, SendBuffer<_BufferSize>>, MemoryBlockBase
+	class SendBuffer : public AsyncWork< SendBuffer<_BufferSize>>, public MemoryBlockBaseResource
 	{
-		using Base = Work<SendBufferPayload, SendBuffer<_BufferSize>>;
+	public:
+		using Base = AsyncWork<SendBuffer<_BufferSize>>;
 
 	private:
 		//Interface.
@@ -88,14 +77,14 @@ namespace CommonEx {
 	public:
 		SendBuffer() noexcept
 			: Base(EWorkType_SendBuffer)
-			, MemoryBlockBase(_BufferSize, Buffer, sizeof(uint8_t), _BufferSize)
+			, MemoryBlockBaseResource(_BufferSize, Buffer, sizeof(uint8_t), _BufferSize)
 		{
 			this->bDontDeleteData = true;
 			IBuffer.Buffer = Buffer;
 		}
 		SendBuffer(const SendBuffer& Other) noexcept
 			: Base(EWorkType::SendBuffer)
-			, MemoryBlockBase(_BufferSize, Buffer, sizeof(uint8_t), _BufferSize)
+			, MemoryBlockBaseResource(_BufferSize, Buffer, sizeof(uint8_t), _BufferSize)
 		{
 			this->bDontDeleteData = true;
 
@@ -104,11 +93,13 @@ namespace CommonEx {
 			IBuffer.Buffer = Buffer;
 		}
 
-		SendBuffer& operator=(const SendBuffer<_BufferSize>& Other) noexcept
+		FORCEINLINE ~SendBuffer() noexcept {}
+
+		FORCEINLINE SendBuffer& operator=(const SendBuffer<_BufferSize>& Other) noexcept
 		{
 			if (!memcpy_s(Buffer, _BufferSize, Other.Buffer, _BufferSize))
 			{
-				Work::operator=(Other);
+				Base::operator=(Other);
 
 				Position = Other.Position;
 			}
@@ -244,9 +235,10 @@ namespace CommonEx {
 	/*------------------------------------------------------------
 		RecvBuffer (Fixed size Receive Buffer)
 	  ------------------------------------------------------------*/
-	struct RecvBuffer : Work<RecvBufferPayload, RecvBuffer>, MemoryBlockBase
+	class RecvBuffer : public AsyncWork<RecvBuffer>, public MemoryBlockBaseResource
 	{
-		using Base = Work<RecvBufferPayload, RecvBuffer>;
+	public:
+		using Base = AsyncWork<RecvBuffer>;
 
 		//Interface.
 		IBuffer		IBuffer{};
@@ -261,7 +253,7 @@ namespace CommonEx {
 
 		RecvBuffer() noexcept
 			: Base(EWorkType_ReceiveBuffer)
-			, MemoryBlockBase(CReceiveBufferSizeMax, Buffer, sizeof(uint8_t), CReceiveBufferSizeMax)
+			, MemoryBlockBaseResource(CReceiveBufferSizeMax, Buffer, sizeof(uint8_t), CReceiveBufferSizeMax)
 		{
 
 		}
@@ -434,7 +426,7 @@ namespace CommonEx {
 
 			return Offset;
 		}
-				
+
 		FORCEINLINE RStatus WriteString(TStreamOffsetType& WriteBackOffset, const char* String, bool bWriteEmptyIfNull = true) noexcept {
 			SubmitOffset(WriteBackOffset);
 
@@ -488,13 +480,13 @@ namespace CommonEx {
 	  ------------------------------------------------------------*/
 	class TSendBufferPtrBase : public _TPtrBase<ISendBuffer> {};
 
-#define TSEND_BUFFER_DESTROY_CALLBACK(Pool)														\
-	NewBuffer->Destroy = [](ptr_t Object, bool bCallDestructor) {								\
-		if (bCallDestructor)																	\
-		{																						\
-			reinterpret_cast<CONCAT(Pool, Buffer) *>(Object)->~CONCAT(Pool, Buffer)();			\
-		}																						\
-		Pool::Deallocate(reinterpret_cast<CONCAT(Pool, Buffer) *>(Object));						\
+#define TSEND_BUFFER_DESTROY_CALLBACK(Pool)						\
+	NewBuffer->Destroy = [NewBuffer](bool bCallDestructor) {	\
+		if (bCallDestructor)									\
+		{														\
+			NewBuffer->~SendBuffer();							\
+		}														\
+		Pool::Deallocate((CONCAT(Pool, Buffer)*)NewBuffer);		\
 	};
 
 	class TSendBuffer : public _TPtr<ISendBuffer, TSendBufferPtrBase>
@@ -745,8 +737,8 @@ namespace CommonEx {
 				return nullptr;
 			}
 
-			NewBuffer->Destroy = [](ptr_t Object, bool bCallDestructor) {
-				Pool::Deallocate((RecvBuffer*)Object);
+			NewBuffer->Destroy = [NewBuffer](bool bCallDestructor) {
+				Pool::Deallocate(NewBuffer);
 			};
 
 			return NewBuffer;
