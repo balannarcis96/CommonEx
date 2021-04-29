@@ -657,6 +657,8 @@ namespace CommonEx
 
 		if constexpr (Size <= sizeof(MemoryBlockBaseResource*))
 		{ //we have sizeof(MemoryBlockBaseResource*) bytes that we can use to store the lambda in
+			Body = nullptr; //zerout the memory
+
 			new ((void*)(&Body)) Lambda(ByConstRef); //construct the lambda into the pointer's memory space
 		}
 		else
@@ -667,6 +669,8 @@ namespace CommonEx
 				LogFatal("Task<> Failed to allocate body size({})!", sizeof(Lambda));
 				abort(); //to dramatic?
 			}
+
+			Body->ZeroMemoryBlock(); //zerout the memory
 
 			new ((void*)(Body->Block)) Lambda(ByConstRef); //construct the lambda into the block
 		}

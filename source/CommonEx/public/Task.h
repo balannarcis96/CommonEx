@@ -187,7 +187,7 @@ namespace CommonEx
 		using MyType = TaskEx<BodySize, ReturnType(Args...)>;
 
 	public:
-		FORCEINLINE ~TaskEx() noexcept
+		~TaskEx() noexcept
 		{
 			Clear();
 		}
@@ -195,16 +195,16 @@ namespace CommonEx
 		FORCEINLINE TaskEx() noexcept {}
 
 		template<typename Lambda>
-		FORCEINLINE TaskEx(const Lambda& ByConstRef) noexcept
+		FORCEINLINE TaskEx(Lambda&& ByConstRef) noexcept
 		{
-			BuildHandler<Lambda>(ByConstRef);
+			this->BuildHandler<Lambda>(std::move(ByConstRef));
 		}
 
 		template<typename Lambda>
-		FORCEINLINE void operator=(const Lambda& ByConstRef)noexcept
+		FORCEINLINE void operator=(Lambda&& ByConstRef)noexcept
 		{
 			Clear();
-			BuildHandler<Lambda>(ByConstRef);
+			this->BuildHandler<Lambda>(std::move(ByConstRef));
 		}
 
 		FORCEINLINE ReturnType operator()(Args... args) noexcept
@@ -266,6 +266,26 @@ namespace CommonEx
 		}
 
 		template<typename Lambda>
+		FORCEINLINE void BuildHandler(Lambda&& ByConstRef) noexcept
+		{
+			static_assert(sizeof(Lambda) <= CTaskExBodySize, "TaskEx<> Lambda type is bigger than the body, please adjust CTaskExBodySize");
+
+			if constexpr (std::is_destructible_v<Lambda>)
+			{
+				DestroyStub = (ptr_t)&DestroyStubFunction<Lambda>;
+			}
+			else
+			{
+				DestroyStub = nullptr;
+			}
+
+			Handler = &CallStub<Lambda>;
+
+			ZeroBody();
+			new (GetBody()) Lambda(std::move(ByConstRef));
+		}
+
+		template<typename Lambda>
 		FORCEINLINE static ReturnType CallStub(ptr_t Body, Args... args)noexcept
 		{
 			return ((Lambda*)Body)->operator()(std::forward<Args>(args)...);
@@ -284,6 +304,10 @@ namespace CommonEx
 		FORCEINLINE constexpr ptr_t GetBody() noexcept
 		{
 			return (ptr_t)(Body);
+		}
+		FORCEINLINE void ZeroBody() noexcept
+		{
+			 memset(Body, 0, BodySize);
 		}
 
 		HandlerType			Handler{ nullptr };
