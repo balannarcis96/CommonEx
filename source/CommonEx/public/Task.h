@@ -194,12 +194,8 @@ namespace CommonEx
 
 		_TaskEx() noexcept {}
 
-		//Dont duplicate unless needed!
-		_TaskEx(const MyType& Other) = delete;
-		_TaskEx& operator=(const MyType& Other) = delete;
-
-		//Duplicate should?
-		/*FORCEINLINE _TaskEx(const MyType& Other) noexcept
+		//Duplicate Task (be careful, may produce shared state)
+		FORCEINLINE _TaskEx(const MyType& Other) noexcept
 		{
 			(*this) = Other;
 		}
@@ -213,7 +209,7 @@ namespace CommonEx
 			if (!Other)
 			{
 				Clear();
-				return;
+				return *this;
 			}
 
 			Handler = Other.Handler;
@@ -231,7 +227,7 @@ namespace CommonEx
 			}
 
 			return *this;
-		}*/
+		}
 
 		FORCEINLINE _TaskEx(MyType&& Other) noexcept
 		{
@@ -252,7 +248,7 @@ namespace CommonEx
 
 			Handler = Other.Handler;
 			DestroyStub = Other.DestroyStub;
-			
+
 			if (memcpy_s(
 				Body,
 				BodySize,
@@ -272,12 +268,17 @@ namespace CommonEx
 			return *this;
 		}
 
+		template<typename TLambda>
+		FORCEINLINE _TaskEx(MyType&& Other) noexcept
+		{
+			this->operator=<TLambda>(Other);
+		}
 		template<typename Lambda>
-		FORCEINLINE _TaskEx(Lambda&& ByConstRef) noexcept
+		FORCEINLINE _TaskEx(Lambda&& Other) noexcept
 		{
 			static_assert(sizeof(Lambda) <= BodySize, "Lambda cannot fit into this task, please resize the task or the lambda capture scope");
 
-			this->BuildHandler<Lambda>(std::move(ByConstRef));
+			this->BuildHandler<Lambda>(std::move(Other));
 		}
 
 		template<typename TLambda>
@@ -287,7 +288,7 @@ namespace CommonEx
 			{
 				return (*this) = std::move(Lambda);
 			}
-			else if constexpr(std::is_functor<TLambda, ReturnType(TLambda::*)(Args...)>::value)
+			else if constexpr (std::is_lambda_f<std::decay_t<TLambda>, ReturnType, Args...>::value)
 			{
 				static_assert(sizeof(TLambda) <= BodySize, "Lambda cannot fit into this task, please resize the task or the lambda capture scope");
 
@@ -296,7 +297,7 @@ namespace CommonEx
 			}
 			else
 			{
-				static_assert("Pass a functor or same type to this operator!");
+				static_assert(false, "Pass a functor or same type to this operator!");
 			}
 
 			return *this;
@@ -337,6 +338,7 @@ namespace CommonEx
 				((DestroyStubType)DestroyStub)(GetBody());
 			}
 
+			DestroyStub = nullptr;
 			Handler = nullptr;
 		}
 
@@ -400,14 +402,15 @@ namespace CommonEx
 		{
 			return (ptr_t)(Body);
 		}
+
 		FORCEINLINE void ZeroBody() noexcept
 		{
-			 memset(Body, 0, BodySize);
+			memset(Body, 0, BodySize);
 		}
 
 		HandlerType			Handler{ nullptr };
 		ptr_t				DestroyStub{ nullptr };
-		uint8_t				Body[BodySize];
+		uint8_t				Body[BodySize]{ 0 };
 	};
 
 	template<typename FunctionType>

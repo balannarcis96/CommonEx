@@ -9,23 +9,26 @@
  *
  */
 
-namespace CommonEx {
-	enum class RStatus : int32_t {
-		Success = 0,
-		Fail,
-		WorkRemains,
-		Timedout,
-		AlreadyPerformed,
-		NotImplemented,
-		AcquireFailed,
-		ConnectionLost,
-		Aborted,
-		InvalidParameters,
-		OperationOverflows,
+namespace CommonEx
+{
+	enum class RStatus : int32_t
+	{
+		Success = 0
+		, Fail
+		, WorkRemains
+		, Timedout
+		, AlreadyPerformed
+		, NotImplemented
+		, AcquireFailed
+		, ConnectionLost
+		, Aborted
+		, InvalidParameters
+		, OperationOverflows
+		, ThreadIsOwnedByTheGroup
 
 		//Custom
 
-		MAX
+		, MAX
 	};
 
 	constexpr RStatus RSuccess{ RStatus::Success };
@@ -39,7 +42,8 @@ namespace CommonEx {
 	constexpr RStatus RInvalidParameters{ RStatus::InvalidParameters };
 	constexpr RStatus ROperationOverflows{ RStatus::OperationOverflows };
 
-	inline bool operator!(const RStatus& Status) noexcept {
+	inline bool operator!(const RStatus& Status) noexcept
+	{
 		return Status != RSuccess;
 	}
 }

@@ -109,6 +109,10 @@ namespace CommonEx {
 #endif // _HAS_NODISCARD
 #endif // _HAS_NODISCARD
 
+#ifndef FORCEINLINE
+#define FORCEINLINE __forceinline
+#endif
+
 namespace CommonEx {
 	/*------------------------------------------------------------
 		Buffer interface
@@ -137,7 +141,6 @@ namespace CommonEx {
 #include "Core.h"
 #include "EntityId.h"
 #include "Stream.h"
-#include "Worker.h"
 #include "TransportLayer.h"
 #include "Task.h"
 #include "Memory.h"
@@ -150,6 +153,7 @@ namespace CommonEx {
 #include "Work.h"
 #include "Buffer.h"
 #include "PacketBuilder.h"
+#include "Worker.h"
 #include "ConnectionEndpoint.h"
 
 namespace CommonEx {

@@ -13,10 +13,6 @@
 #define ALIGNMENT alignof(size_t)
 #endif
 
-#ifndef FORCEINLINE
-#define FORCEINLINE __forceinline
-#endif
-
 //Empty macro used to keep Visual Studio from indenting
 #define PTR
 

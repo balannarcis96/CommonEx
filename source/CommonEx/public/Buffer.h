@@ -15,7 +15,8 @@
  *
  */
 
-namespace CommonEx {
+namespace CommonEx
+{
 	struct TStream;
 
 	constexpr size_t CReceiveBufferSizeMax = CPacketMaxSize;
@@ -52,7 +53,8 @@ namespace CommonEx {
 		using Base = AsyncWork<SendBuffer<_BufferSize>>;
 
 	private:
-		//Interface.
+
+		//Buffer interface object 
 		IBuffer IBuffer{};
 
 		const uint32_t BufferSize{ _BufferSize };
@@ -125,7 +127,8 @@ namespace CommonEx {
 
 			RTRY_L_FMT(
 				(RStatus)memcpy_s(GetFront(), GetRemaining(), Data, Size),
-				"SendBuffer::Write(Size:{}) call to memcpy_s() failed!", Size) {}
+				"SendBuffer::Write(Size:{}) call to memcpy_s() failed!", Size)
+			{}
 
 			Position += Size;
 
@@ -246,7 +249,8 @@ namespace CommonEx {
 		int32_t		IOState{ 0 };
 
 		//Actual buffer.
-		union {
+		union
+		{
 			TPacketHeader	PacketHead;
 			uint8_t			Buffer[CReceiveBufferSizeMax];
 		};
@@ -258,7 +262,8 @@ namespace CommonEx {
 
 		}
 
-		constexpr inline void Reset(TPacketSize RecvLength = sizeof(TPacketHeader)) noexcept {
+		constexpr inline void Reset(TPacketSize RecvLength = sizeof(TPacketHeader)) noexcept
+		{
 			IBuffer.Buffer = Buffer;
 			IBuffer.Length = RecvLength;
 			IOState = 0;
@@ -266,7 +271,8 @@ namespace CommonEx {
 			memset(&this->WorkOverllapped, 0, sizeof(OsOverlappedType));
 		}
 
-		constexpr inline void Update(TPacketSize UpdateSize) noexcept {
+		constexpr inline void Update(TPacketSize UpdateSize) noexcept
+		{
 			IBuffer.Buffer += UpdateSize;
 			IBuffer.Length -= UpdateSize;
 		}
@@ -281,12 +287,14 @@ namespace CommonEx {
 			return IBuffer;
 		}
 
-		inline RStatus Write(const uint8_t* Buffer, TPacketSize Size)noexcept {
+		inline RStatus Write(const uint8_t* Buffer, TPacketSize Size)noexcept
+		{
 			if (memcpy_s(
 				this->Buffer
 				, CReceiveBufferSizeMax
 				, Buffer
-				, Size)) {
+				, Size))
+			{
 				return RFail;
 			}
 
@@ -294,12 +302,14 @@ namespace CommonEx {
 		}
 
 		template<typename T>
-		const T& To() const noexcept {
+		const T& To() const noexcept
+		{
 			return *(T*)Buffer;
 		}
 
 		template<typename T>
-		T& To() noexcept {
+		T& To() noexcept
+		{
 			return *(T*)Buffer;
 		}
 	};
@@ -403,7 +413,8 @@ namespace CommonEx {
 		}
 
 		//Writes the hader to the stream and returns a ref to it, use the ref to write back the offset and if needed the count
-		FORCEINLINE TPacketObjectArrayHeader& WriteArrayRef(TPacketSize ObjectCount = 0)noexcept {
+		FORCEINLINE TPacketObjectArrayHeader& WriteArrayRef(TPacketSize ObjectCount = 0)noexcept
+		{
 			TPacketObjectArrayHeader& Header = *(TPacketObjectArrayHeader*)GetFront();
 
 			Write(TPacketObjectArrayHeader());
@@ -419,7 +430,8 @@ namespace CommonEx {
 		//		... //write more to the stream
 		//		Stream.WriteString(UsernameRef, "String");
 		//
-		FORCEINLINE TStreamOffsetType& WriteStringRef()noexcept {
+		FORCEINLINE TStreamOffsetType& WriteStringRef()noexcept
+		{
 			TStreamOffsetType& Offset = *(TStreamOffsetType*)GetFront();
 
 			Write(TStreamOffsetType());
@@ -427,40 +439,47 @@ namespace CommonEx {
 			return Offset;
 		}
 
-		FORCEINLINE RStatus WriteString(TStreamOffsetType& WriteBackOffset, const char* String, bool bWriteEmptyIfNull = true) noexcept {
+		FORCEINLINE RStatus WriteString(TStreamOffsetType& WriteBackOffset, const char* String, bool bWriteEmptyIfNull = true) noexcept
+		{
 			SubmitOffset(WriteBackOffset);
 
 			return IStream::WriteString(String, bWriteEmptyIfNull);
 		}
-		FORCEINLINE RStatus WriteString(TStreamOffsetType& WriteBackOffset, const char* String, int32_t MaxLength, bool bWriteEmptyIfNull = true) noexcept {
+		FORCEINLINE RStatus WriteString(TStreamOffsetType& WriteBackOffset, const char* String, int32_t MaxLength, bool bWriteEmptyIfNull = true) noexcept
+		{
 			SubmitOffset(WriteBackOffset);
 
 			return IStream::WriteString(String, MaxLength, bWriteEmptyIfNull);
 		}
-		FORCEINLINE RStatus WriteString(TStreamOffsetType& WriteBackOffset, int32_t StringLength, const char* String, bool bWriteEmptyIfNull = true) noexcept {
+		FORCEINLINE RStatus WriteString(TStreamOffsetType& WriteBackOffset, int32_t StringLength, const char* String, bool bWriteEmptyIfNull = true) noexcept
+		{
 			SubmitOffset(WriteBackOffset);
 
 			return IStream::WriteString(StringLength, String, bWriteEmptyIfNull);
 		}
 
-		FORCEINLINE RStatus WriteWString(TStreamOffsetType& WriteBackOffset, const wchar_t* String, bool bWriteEmptyIfNull = true) noexcept {
+		FORCEINLINE RStatus WriteWString(TStreamOffsetType& WriteBackOffset, const wchar_t* String, bool bWriteEmptyIfNull = true) noexcept
+		{
 			SubmitOffset(WriteBackOffset);
 
 			return IStream::WriteWString(String, bWriteEmptyIfNull);
 		}
-		FORCEINLINE RStatus WriteWString(TStreamOffsetType& WriteBackOffset, const wchar_t* String, int32_t MaxLengthInWchar_t, bool bWriteEmptyIfNull = true) noexcept {
+		FORCEINLINE RStatus WriteWString(TStreamOffsetType& WriteBackOffset, const wchar_t* String, int32_t MaxLengthInWchar_t, bool bWriteEmptyIfNull = true) noexcept
+		{
 			SubmitOffset(WriteBackOffset);
 
 			return IStream::WriteWString(String, MaxLengthInWchar_t, bWriteEmptyIfNull);
 		}
-		FORCEINLINE RStatus WriteWString(TStreamOffsetType& WriteBackOffset, int32_t StringLengthInWchar_t, const wchar_t* String, bool bWriteEmptyIfNull = true) noexcept {
+		FORCEINLINE RStatus WriteWString(TStreamOffsetType& WriteBackOffset, int32_t StringLengthInWchar_t, const wchar_t* String, bool bWriteEmptyIfNull = true) noexcept
+		{
 			SubmitOffset(WriteBackOffset);
 
 			return IStream::WriteWString(StringLengthInWchar_t, String, bWriteEmptyIfNull);
 		}
 
 		//Target = GetPosition();
-		FORCEINLINE void SubmitOffset(TStreamOffsetType& Target) const noexcept {
+		FORCEINLINE void SubmitOffset(TStreamOffsetType& Target) const noexcept
+		{
 			Target = (TStreamOffsetType)GetPosition();
 		}
 
@@ -733,11 +752,13 @@ namespace CommonEx {
 		static inline TRecvBuffer New() noexcept
 		{
 			RecvBuffer* NewBuffer = Pool::NewRaw();
-			if (!NewBuffer) {
+			if (!NewBuffer)
+			{
 				return nullptr;
 			}
 
-			NewBuffer->Destroy = [NewBuffer](bool bCallDestructor) {
+			NewBuffer->Destroy = [NewBuffer](bool bCallDestructor)
+			{
 				Pool::Deallocate(NewBuffer);
 			};
 
