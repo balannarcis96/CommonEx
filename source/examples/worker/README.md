@@ -35,10 +35,10 @@ RStatus WorkersExample()
   ```cpp
   RStatus WorkExample()
 {
-	auto work = MakeUniqueManaged<AnyWorkAsync<>>(std::move([](AnyWorkAsync<>* Self, RStatus Result) mutable noexcept
+	auto work = MakeUniqueManaged<AnyWorkAsync<>>([](AnyWorkAsync<>* Self, RStatus Result) mutable noexcept
 		{
 			LogInfo("AsyncWork!!!");
-		}));
+		});
 
 	auto work2 = MakeUniqueManaged<MyWork>();
 	work2->SetCompletionHandler([](MyWork* self, std::string* Payload, RStatus Result)
