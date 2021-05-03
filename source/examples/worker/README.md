@@ -30,7 +30,7 @@ RStatus WorkersExample()
 	return RSuccess;
 }
   ```
-# worker usage example
+# work usage example
   
   ```cpp
   RStatus WorkExample()
