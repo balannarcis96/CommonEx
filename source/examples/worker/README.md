@@ -3,7 +3,7 @@
 ```cpp
 RStatus WorkersExample()
 {
-	//		                 <12> - Task body size (lambda capture body max size) = 32bytes
+	//		                 <12> - Task body size (lambda capture body max size) = 12bytes
 	//WorkerGroupWithMainThread<12> Group;
 	WorkerGroup<12>	Group;
 
