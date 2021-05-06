@@ -6,6 +6,8 @@
  *			-TVector<T>
  *			-TArray<T, Size> -- if Size = 0 the size must be passed to the constructor
  *			-TStack<T>
+ *			-TQueue<T>
+ *			-TDQueue<T>
  *			-TMap<KeyType, T>
  *		* All these structures allocate memory through the MemoryManager *
  *
@@ -224,12 +226,38 @@ namespace CommonEx {
 		uint32_t	Count{ 0 };
 	};
 
+	/**
+	 * Vector structure (dynamic sized array).
+	 * * Memory management is done through the MemoryManager *
+	 */
 	template <typename T>
 	using TVector = TStructureBase<T, false>;
 
+	/**
+	 * Stack structure (dynamic sized stack).
+	 * * Memory management is done through the MemoryManager *
+	 */
 	template <typename T>
 	using TStack = TStructureBase<T, false>;
 
+	/**
+	 * Queue structure (dynamic sized queue).
+	 * * Memory management is done through the MemoryManager *
+	 */
+	template <typename T>
+	using TQueue = TStructureBase<T, false>;
+
+	/**
+	 * Double-ended Queue structure (dynamic sized double ended queue).
+	 * * Memory management is done through the MemoryManager *
+	 */
+	template <typename T>
+	using TDQueue = TStructureBase<T, false>;
+
+	/**
+	 * Fixed size heap Array
+	 * * Memory management is done through the MemoryManager *
+	 */
 	template <typename T, uint32_t MaxCapacity = 0>
 	struct TArray : TStructureBase<T, true>
 	{
@@ -238,6 +266,10 @@ namespace CommonEx {
 		TArray() noexcept : MyBase(MaxCapacity) {}
 	};
 
+	/**
+	 * Fixed size heap Array
+	 * * Memory management is done through the MemoryManager *
+	 */
 	template <typename T>
 	struct TArray<T, 0> : TStructureBase<T, true>
 	{
@@ -246,6 +278,12 @@ namespace CommonEx {
 		TArray(uint32_t Size) noexcept : MyBase(Size) {}
 	};
 
+	/**
+	 * Map structure (dinamyc sized hash table structure)
+	 * * Memory management is done through the MemoryManager *
+	 * 
+	 * @TODO
+	 */
 	template <typename KeyType, typename T>
 	struct TMap
 	{

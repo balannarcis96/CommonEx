@@ -74,6 +74,8 @@ namespace CommonEx
 			R_TRY_L(LargeBlock::Preallocate(), "MemoryManager::SmallBlock Failed to preallocate!") {}
 			R_TRY_L(ExtraLargeBlock::Preallocate(), "MemoryManager::SmallBlock Failed to preallocate!") {}
 
+			GAllocateCount = 0;
+
 			return RSuccess;
 		}
 		_NODISCARD static RStatus Shutdown() noexcept
@@ -84,6 +86,9 @@ namespace CommonEx
 #ifdef MEMEX_STATISTICS
 		static std::atomic<size_t> CustomSizeAllocations;
 		static std::atomic<size_t> CustomSizeDeallocations;
+
+		static inline std::atomic_uint64_t GAllocateCount;
+		static inline std::atomic_uint64_t GFreeCount;
 
 		static void PrintStatistics()
 		{
@@ -115,6 +120,10 @@ namespace CommonEx
 			LogInfo("\n\tCustomSize(OS Blocks):\n\t\tAllocations:{}\n\t\tDeallocations:{}",
 				CustomSizeAllocations.load(),
 				CustomSizeDeallocations.load()
+			);
+			LogInfo("\n\tGAllocate:\n\t\tAllocations:{}\n\t\tDeallocations:{}",
+				GAllocateCount.load(),
+				GFreeCount.load()
 			);
 			LogInfo("\n\tTotal Allocation:{}\n\tTotal Deallocations:{}\n\tTotal OSAllocations:{}\n\tTotal OSDeallocations:{}",
 				SmallBlock::GetTotalAllocations() + MediumBlock::GetTotalAllocations() + LargeBlock::GetTotalAllocations() + ExtraLargeBlock::GetTotalAllocations() + CustomSizeAllocations.load(),

@@ -14,7 +14,7 @@ namespace CommonEx {
 
 	template<typename T>
 	class _TPtrBase {
-		static const bool bIsMemoryResource = std::is_base_of_v<MemoryResourceBase, T>;
+		static const bool bIsMemoryResource = std::is_base_of_v<NotSharedMemoryResourceBase, T>;
 
 	public:
 		//Dereference the pointer
@@ -79,7 +79,8 @@ namespace CommonEx {
 				}
 			}
 			else {
-				static_assert(false, "Implement specific DestroyResource()!");
+				delete this->Ptr;
+				this->Ptr = nullptr;
 			}
 		}
 
@@ -309,21 +310,63 @@ namespace CommonEx {
 #pragma region TPtr [General purpose heap smart pointers]
 
 	template<typename T>
-	using TPtr = std::unique_ptr<T>;
+	using TPtr = _TPtr<T>;
 
 	template<typename T>
-	using TSharedPtr = std::shared_ptr<T>;
+	using TSharedPtr = _TSharedPtr<T>;
 
-	//Creates an heap instance of T(args...) and wrapps it in a unique pointer
+	/**
+	* \brief Creates an heap instance of T(args...) and wrapps it in a unique pointer.
+	*
+	* \return TPtr<T>
+	*/
 	template<typename T, typename ...Args>
 	_NODISCARD FORCEINLINE TPtr<T> MakeUnique(Args... args)noexcept {
-		return std::move(std::make_unique<T>(std::forward<Args>(args)...));
+		auto* Ptr = (T*)GAllocate(sizeof(T), ALIGNMENT);
+		if (!Ptr)
+		{
+			return nullptr;
+		}
+
+		if constexpr (std::is_nothrow_constructible<T, Args...>)
+		{
+			//construct
+			new (Ptr) T(std::forward<Args>(args)...);
+		}
+		else if (std::is_constructible_v<T, Args...>)
+		{
+			static_assert("MakeUnique<T> can only call no-throw constructors!");
+		}
+
+		return Ptr;
 	}
 
-	//Creates an heap instance of T(args...) and wrapps it in a shared pointer
+	/**
+	 * \brief Creates an heap instance of T(args...) and wrapps it in a shared pointer. T must inherit from MemoryResource<true>
+	 * 
+	 * \return TSharedPtr<T>
+	 */
 	template<typename T, typename ...Args>
 	_NODISCARD FORCEINLINE TSharedPtr<T> MakeShared(Args... args)noexcept {
-		return std::move(std::make_shared<T>(std::forward<Args>(args)...));
+		static_assert(std::is_base_of_v<MemoryResource<true>, T>, "T must inherit from MemoryResource<true>");
+
+		auto* Ptr = (T*)GAllocate(sizeof(T), ALIGNMENT);
+		if (!Ptr)
+		{
+			return nullptr;
+		}
+
+		if constexpr (std::is_nothrow_constructible<T, Args...>)
+		{
+			//construct
+			new (Ptr) T(std::forward<Args>(args)...);
+		}
+		else if (std::is_constructible_v<T, Args...>)
+		{
+			static_assert("MakeShared<T> can only call no-throw constructors!");
+		}
+
+		return Ptr;
 	}
 
 #pragma endregion

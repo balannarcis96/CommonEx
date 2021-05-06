@@ -10,58 +10,115 @@
  *
  */
 
-namespace CommonEx {
+namespace CommonEx
+{
 	using MemoryBlockDestroyCallback = _TaskEx<sizeof(ptr_t), void(bool)>;
 
+	class alignas(ALIGNMENT) NotSharedMemoryResourceBase
+	{
+	public:
+		//Destroy callback (deleter)
+		MemoryBlockDestroyCallback	Destroy{  };
+	};
+
 	//base for all Memory Resource objects
-	class MemoryResourceBase {
+	class alignas(ALIGNMENT) MemoryResourceBase: public NotSharedMemoryResourceBase
+	{
 	public:
 
-		//We store the "controll block" inside the resource's memory space
+		//Object's reference count
 		mutable uint32_t RefCount{ 1 };
 
-		//Block flags
-		union {
-
-			struct {
+		//Object's flags
+		union
+		{
+			struct
+			{
 				unsigned bDontDestruct : 1;
 			};
 
 			uint32_t MemoryResourceFlags{ 0 };
 		};
 
-		//Destroy callback (deleter)
-		MemoryBlockDestroyCallback	Destroy{  };
+		//Is this instance waiting to be destroyed ?
+		std::atomic_flag bIsPendingDestroy{};
+
+		FORCEINLINE void SetIsPendingDestroy(bool bValue, bool bNotify = true)noexcept
+		{
+			if (bValue)
+			{
+				bIsPendingDestroy.test_and_set(std::memory_order::memory_order_acq_rel);
+			}
+			else
+			{
+				bIsPendingDestroy.clear(std::memory_order::memory_order_release);
+			}
+
+			if (bNotify)
+			{
+				bIsPendingDestroy.notify_all();
+			}
+		}
+
+		FORCEINLINE bool IsPendingDestroy() const noexcept
+		{
+			return bIsPendingDestroy.test(std::memory_order::acquire);
+		}
+
+		FORCEINLINE void WaitForPendingDestroy(bool bValue) noexcept
+		{
+			bIsPendingDestroy.wait(bValue, std::memory_order::acquire);
+		}
+
+		FORCEINLINE void ResetResource()noexcept
+		{
+			//clear ref count
+			_InterlockedExchange_HLERelease((volatile long*)&RefCount, 1);
+
+			//clear destroy flag
+			SetIsPendingDestroy(false);
+		}
 	};
 
 	template<bool bAtomicRef = true>
-	class MemoryResource : public MemoryResourceBase {
+	class MemoryResource : public MemoryResourceBase
+	{
 	public:
-		FORCEINLINE void AddReference() const noexcept {
-			if constexpr (bAtomicRef) {
+		FORCEINLINE void AddReference() const noexcept
+		{
+			if constexpr (bAtomicRef)
+			{
 				auto& VolatileRefCount = reinterpret_cast<volatile long&>(this->RefCount);
 
 				long RefCount = __iso_volatile_load32(reinterpret_cast<volatile int*>(&VolatileRefCount));
-				while (RefCount != 0) {
+				while (RefCount != 0)
+				{
 					const long OldValue = _InterlockedCompareExchange(&VolatileRefCount, RefCount + 1, RefCount);
-					if (OldValue == RefCount) {
+					if (OldValue == RefCount)
+					{
 						return;
 					}
 
 					RefCount = OldValue;
 				}
 			}
-			else {
+			else
+			{
 				RefCount++;
 			}
 		}
-		FORCEINLINE bool ReleaseReference() const noexcept {
-			if constexpr (bAtomicRef) {
-				if (_InterlockedDecrement(reinterpret_cast<volatile long*>(&this->RefCount)) == 0) {
+
+		FORCEINLINE bool ReleaseReference() const noexcept
+		{
+			if constexpr (bAtomicRef)
+			{
+				if (_InterlockedDecrement(reinterpret_cast<volatile long*>(&this->RefCount)) == 0)
+				{
 					return true;
 				}
 			}
-			else {
+			else
+			{
 				RefCount--;
 
 				if (RefCount == 0)
@@ -74,7 +131,8 @@ namespace CommonEx {
 		}
 	};
 
-	class MemoryBlockBase {
+	class MemoryBlockBase
+	{
 	public:
 		ulong_t					const	BlockSize{ 0 };
 		ulong_t					const	ElementSize{ 0 };
@@ -102,23 +160,28 @@ namespace CommonEx {
 		MemoryBlockBase(MemoryBlockBase&&) = delete;
 		MemoryBlockBase& operator=(MemoryBlockBase&& Other) = delete;
 
-		FORCEINLINE const uint8_t* CanFit(ulong_t Length, ulong_t StartOffset = 0) const noexcept {
-			if (BlockSize < (Length + StartOffset)) {
+		FORCEINLINE const uint8_t* CanFit(ulong_t Length, ulong_t StartOffset = 0) const noexcept
+		{
+			if (BlockSize < (Length + StartOffset))
+			{
 				return nullptr;
 			}
 
 			return Block + StartOffset;
 		}
 
-		FORCEINLINE const uint8_t* GetBegin(ulong_t StartOffset = 0) const noexcept {
+		FORCEINLINE const uint8_t* GetBegin(ulong_t StartOffset = 0) const noexcept
+		{
 			return Block + StartOffset;
 		}
 
-		FORCEINLINE const uint8_t* GetEnd() const noexcept {
+		FORCEINLINE const uint8_t* GetEnd() const noexcept
+		{
 			return Block + BlockSize;
 		}
 
-		FORCEINLINE void ZeroMemoryBlock() noexcept {
+		FORCEINLINE void ZeroMemoryBlock() noexcept
+		{
 			memset(
 				Block,
 				0,
@@ -127,7 +190,8 @@ namespace CommonEx {
 		}
 	};
 
-	class MemoryBlockBaseResource : public MemoryResource<true>, public MemoryBlockBase {
+	class MemoryBlockBaseResource : public MemoryResource<true>, public MemoryBlockBase
+	{
 	public:
 		using Base1 = MemoryResource<true>;
 		using Base2 = MemoryBlockBase;
@@ -144,7 +208,8 @@ namespace CommonEx {
 	};
 
 	template<ulong_t Size, bool bIsMemoryResource = false>
-	class MemoryBlock : public MemoryBlockBase {
+	class MemoryBlock : public MemoryBlockBase
+	{
 		static_assert(Size% ALIGNMENT == 0, "Size of MemoryBlock<Size> must be a multiple of ALIGNMENT");
 
 	public:
@@ -160,7 +225,8 @@ namespace CommonEx {
 	};
 
 	template<ulong_t Size>
-	class MemoryBlock<Size, true> : public MemoryBlockBaseResource {
+	class MemoryBlock<Size, true> : public MemoryBlockBaseResource
+	{
 		static_assert(Size% ALIGNMENT == 0, "Size of MemoryBlock<Size> must be a multiple of ALIGNMENT");
 
 	public:
@@ -176,7 +242,8 @@ namespace CommonEx {
 	};
 
 	template<bool bIsMemoryResource = false>
-	class CustomBlock : public MemoryBlockBase {
+	class CustomBlock : public MemoryBlockBase
+	{
 	public:
 		CustomBlock(ulong_t Size, ulong_t ElementSize) noexcept
 			: MemoryBlockBase(Size, nullptr, ElementSize)
@@ -192,7 +259,8 @@ namespace CommonEx {
 	};
 
 	template<>
-	class CustomBlock<true> : public MemoryBlockBaseResource {
+	class CustomBlock<true> : public MemoryBlockBaseResource
+	{
 	public:
 		CustomBlock(ulong_t Size, ulong_t ElementSize) noexcept
 			: MemoryBlockBaseResource(Size, nullptr, ElementSize)
@@ -208,7 +276,8 @@ namespace CommonEx {
 	};
 
 	template<bool bIsMemoryResource = false>
-	class CustomBlockHeader : public MemoryBlockBase {
+	class CustomBlockHeader : public MemoryBlockBase
+	{
 	public:
 		CustomBlockHeader(ulong_t Size, ulong_t ElementSize)
 			: MemoryBlockBase(Size, nullptr, ElementSize)
@@ -224,7 +293,8 @@ namespace CommonEx {
 	};
 
 	template<>
-	class CustomBlockHeader<true>: public MemoryBlockBaseResource {
+	class CustomBlockHeader<true> : public MemoryBlockBaseResource
+	{
 	public:
 		CustomBlockHeader(ulong_t Size, ulong_t ElementSize)
 			: MemoryBlockBaseResource(Size, nullptr, ElementSize)

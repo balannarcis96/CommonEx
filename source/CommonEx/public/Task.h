@@ -281,7 +281,7 @@ namespace CommonEx
 			this->BuildHandler<Lambda>(std::move(Other));
 		}
 
-		template<typename TLambda>
+		template<typename TLambda, bool bDontCheckBodySize = false>
 		FORCEINLINE _TaskEx& operator=(TLambda&& Lambda)noexcept
 		{
 			if constexpr (std::is_same_v<MyType, std::decay_t<TLambda>>)
@@ -290,7 +290,10 @@ namespace CommonEx
 			}
 			else if constexpr (std::is_lambda_f<std::decay_t<TLambda>, ReturnType, Args...>::value)
 			{
-				static_assert(sizeof(TLambda) <= BodySize, "Lambda cannot fit into this task, please resize the task or the lambda capture scope");
+				if constexpr (!bDontCheckBodySize)
+				{
+					static_assert(sizeof(TLambda) <= BodySize, "Lambda cannot fit into this task, please resize the task or the lambda capture scope");
+				}
 
 				Clear();
 				this->BuildHandler<TLambda>(std::move(Lambda));
@@ -363,7 +366,7 @@ namespace CommonEx
 		}
 
 		template<typename Lambda>
-		FORCEINLINE void BuildHandler(Lambda&& ByConstRef) noexcept
+		FORCEINLINE void BuildHandler(Lambda&& ByRefRef) noexcept
 		{
 			static_assert(sizeof(Lambda) <= CTaskExBodySize, "TaskEx<> Lambda type is bigger than the body, please adjust CTaskExBodySize");
 
@@ -379,7 +382,7 @@ namespace CommonEx
 			Handler = &CallStub<Lambda>;
 
 			ZeroBody();
-			new (GetBody()) Lambda(std::move(ByConstRef));
+			new (GetBody()) Lambda(std::move(ByRefRef));
 		}
 
 		template<typename Lambda>
@@ -410,6 +413,8 @@ namespace CommonEx
 
 		HandlerType			Handler{ nullptr };
 		ptr_t				DestroyStub{ nullptr };
+
+		//Body must be last!
 		uint8_t				Body[BodySize]{ 0 };
 	};
 

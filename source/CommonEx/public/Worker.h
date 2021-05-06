@@ -356,6 +356,8 @@ namespace CommonEx
 
 		~_WorkerGroup()noexcept
 		{
+			ForceJoinGroup();
+
 			Reset();
 		}
 
@@ -524,6 +526,15 @@ namespace CommonEx
 				return;
 			}
 
+			for (int32_t i = 0; i < WCount; i++)
+			{
+				Workers[i].Join();
+			}
+		}
+
+		FORCEINLINE void ForceJoinGroup() noexcept
+		{
+			int32_t WCount = GetWorkersCount();
 			for (int32_t i = 0; i < WCount; i++)
 			{
 				Workers[i].Join();

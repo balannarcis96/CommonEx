@@ -11,13 +11,16 @@
 
  //@TODO UDP abstraction
 
-namespace CommonEx {
-	enum class ENetNameType : uint16_t {
+namespace CommonEx
+{
+	enum class ENetNameType : uint16_t
+	{
 		None,
 		DataGram
 	};
 
-	struct NetName {
+	struct NetName
+	{
 		//Network name type.
 		ENetNameType		Type{ ENetNameType::None };
 
@@ -27,11 +30,13 @@ namespace CommonEx {
 		//Name size.
 		int32_t				NameLen{ 0 };
 
-		NetName() {
+		NetName()
+		{
 			NameLen = sizeof(Name);
 			memset(&Name, 0, sizeof(Name));
 		}
-		NetName(uint16_t Port, TAddressFamily AdFamily = AF_INET) {
+		NetName(uint16_t Port, TAddressFamily AdFamily = AF_INET)
+		{
 			NameLen = sizeof(Name);
 			memset(&Name, 0, sizeof(Name));
 
@@ -39,7 +44,8 @@ namespace CommonEx {
 			Name.sin_family = AdFamily;
 			Name.sin_addr.s_addr = INADDR_ANY;
 		}
-		NetName(uint16_t Port, ulong_t Addr, TAddressFamily AdFamily = AF_INET) {
+		NetName(uint16_t Port, ulong_t Addr, TAddressFamily AdFamily = AF_INET)
+		{
 			NameLen = sizeof(Name);
 			memset(&Name, 0, sizeof(Name));
 
@@ -49,21 +55,26 @@ namespace CommonEx {
 		}
 	};
 
-	struct NetEndpoint : NetName {
+	struct NetEndpoint : NetName
+	{
 		//Endpoint socket.
 		TSocket				Socket;
 
-		NetEndpoint() : NetName() {
+		NetEndpoint() : NetName()
+		{
 			Socket = INVALID_SOCKET;
 		}
-		NetEndpoint(uint16_t Port, TAddressFamily AdFamily = AF_INET) : NetName(Port, AdFamily) {
+		NetEndpoint(uint16_t Port, TAddressFamily AdFamily = AF_INET) : NetName(Port, AdFamily)
+		{
 			Socket = INVALID_SOCKET;
 		}
-		NetEndpoint(uint16_t Port, ulong_t Addr, TAddressFamily AdFamily = AF_INET) : NetName(Port, Addr, AdFamily) {
+		NetEndpoint(uint16_t Port, ulong_t Addr, TAddressFamily AdFamily = AF_INET) : NetName(Port, Addr, AdFamily)
+		{
 			Socket = INVALID_SOCKET;
 		}
 
-		RStatus Initialize(TSocket Socket, const sockaddr_in* Name) noexcept {
+		RStatus Initialize(TSocket Socket, const sockaddr_in* Name) noexcept
+		{
 			this->Socket = Socket;
 			NameLen = sizeof(this->Name);
 
@@ -71,7 +82,8 @@ namespace CommonEx {
 
 			return RSuccess;
 		}
-		RStatus Initialize(uint16_t Port, ulong_t Addr, TAddressFamily AdFamily = AF_INET) {
+		RStatus Initialize(uint16_t Port, ulong_t Addr, TAddressFamily AdFamily = AF_INET)
+		{
 			NameLen = sizeof(Name);
 			memset(&Name, 0, sizeof(Name));
 
@@ -82,8 +94,10 @@ namespace CommonEx {
 			return RSuccess;
 		}
 
-		inline RStatus Close() noexcept {
-			if (shutdown(Socket, SD_BOTH)) {
+		inline RStatus Close() noexcept
+		{
+			if (shutdown(Socket, SD_BOTH))
+			{
 #if COMMONEX_WIN32_PLATFROM
 				R_SET_LAST_ERROR_FMT("NetEndpoint::Close() Failed to shutdown() WSAERROR[{}]", WSAGetLastError());
 #else
@@ -105,13 +119,15 @@ namespace CommonEx {
 		}
 	};
 
-	struct TCPEndpoint : NetEndpoint {
+	struct TCPEndpoint : NetEndpoint
+	{
 		//Receive flags.
 		ulong_t				Flags = 0;
 
 		TCPEndpoint() : NetEndpoint() {}
 
-		inline RStatus Initialize(uint16_t Port, ulong_t Addr, TAddressFamily AdFamily = AF_INET, bool bOverlappedSocket = true) noexcept {
+		inline RStatus Initialize(uint16_t Port, ulong_t Addr, TAddressFamily AdFamily = AF_INET, bool bOverlappedSocket = true) noexcept
+		{
 #if COMMONEX_WIN32_PLATFROM
 			Socket = WSASocketW(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, bOverlappedSocket ? WSA_FLAG_OVERLAPPED : 0);
 			if (Socket == INVALID_SOCKET)
@@ -127,11 +143,13 @@ namespace CommonEx {
 			return RSuccess;
 		}
 
-		inline RStatus Initialize(TSocket Socket, const sockaddr_in* Name) noexcept {
+		inline RStatus Initialize(TSocket Socket, const sockaddr_in* Name) noexcept
+		{
 			return NetEndpoint::Initialize(Socket, Name);
 		}
 
-		RStatus AssoctiateToAsyncIO(CurrentAsyncIOSystem* AsyncIOInterface)  noexcept {
+		RStatus AssoctiateToAsyncIO(CurrentAsyncIOSystem* AsyncIOInterface)  noexcept
+		{
 #if COMMONEX_WIN32_PLATFROM
 			this->AsyncIOInterface = AsyncIOInterface;
 
@@ -148,7 +166,8 @@ namespace CommonEx {
 		}
 
 		/*Attempts to connect the Socket to Name*/
-		FORCEINLINE RStatus Connect() noexcept {
+		FORCEINLINE RStatus Connect() noexcept
+		{
 			if (connect(Socket, (const sockaddr*)&Name, sizeof(Name)) == SOCKET_ERROR)
 			{
 				//RTRY_L_FMT(RFail, "TCPEndpoint::Connect() failed to connect() WSAERROR[{}]", WSAGetLastError());
@@ -158,25 +177,29 @@ namespace CommonEx {
 			return RSuccess;
 		}
 
-		FORCEINLINE int32_t Receive(IBuffer* Buffer, int32_t length = -1, int32_t flags = 0) noexcept {
+		FORCEINLINE int32_t Receive(IBuffer* Buffer, int32_t length = -1, int32_t flags = 0) noexcept
+		{
 			if (length < 0)
 				length = (int)Buffer->Length;
 
 			return recv(Socket, (char*)Buffer->Buffer, length, flags);
 		}
 
-		FORCEINLINE int32_t Send(const IBuffer* Buffer, int32_t length = -1, int32_t flags = 0) noexcept {
+		FORCEINLINE int32_t Send(const IBuffer* Buffer, int32_t length = -1, int32_t flags = 0) noexcept
+		{
 			if (length < 0)
 				length = (int)Buffer->Length;
 
 			return send(Socket, (const char*)Buffer->Buffer, length, flags);
 		}
 
-		FORCEINLINE RStatus ReceiveAsync(IBuffer* Buffer, OsOverlappedType* Work) noexcept {
+		FORCEINLINE RStatus ReceiveAsync(IBuffer* Buffer, OsOverlappedType* Work) noexcept
+		{
 			return AsyncIOInterface->ReceiveAsync(Socket, Buffer, Work);
 		}
 
-		FORCEINLINE RStatus SendAsync(IBuffer* Buffer, OsOverlappedType* Work) const noexcept {
+		FORCEINLINE RStatus SendAsync(IBuffer* Buffer, OsOverlappedType* Work) const noexcept
+		{
 			return AsyncIOInterface->SendAsync(Socket, Buffer, Work);
 		}
 
@@ -184,10 +207,12 @@ namespace CommonEx {
 		CurrentAsyncIOSystem* PTR		AsyncIOInterface{ nullptr };
 	};
 
-	struct TCPListenerWorker : NetEndpoint {
-		using AcceptHandler = Delegate<void, TCPListenerWorker*, SOCKET, sockaddr_in*>;
+	struct TCPListenerWorker : NetEndpoint
+	{
+		using AcceptHandler = _TaskEx<32, void(TSocket, sockaddr_in*)>;
 
-		RStatus Initialize(uint16_t Port, ulong_t Addr, AcceptHandler OnAccept, int32_t MaxPendingConnections = SOMAXCONN) noexcept {
+		RStatus Initialize(uint16_t Port, ulong_t Addr, AcceptHandler&& OnAccept, int32_t MaxPendingConnections = SOMAXCONN) noexcept
+		{
 #if COMMONEX_WIN32_PLATFROM
 			Socket = WSASocketW(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
 			if (Socket == INVALID_SOCKET)
@@ -237,18 +262,22 @@ namespace CommonEx {
 			return RSuccess;
 		}
 
-		inline void Start()noexcept {
+		inline void Start()noexcept
+		{
 			Run.store(TRUE);
 		}
-		inline void Stop()noexcept {
-			if (Run.load() == FALSE) {
+		inline void Stop()noexcept
+		{
+			if (Run.load() == FALSE)
+			{
 				return;
 			}
 
 			Run.store(FALSE);
 
 #if COMMONEX_WIN32_PLATFROM
-			if (!WSACloseEvent(AcceptEvent)) {
+			if (!WSACloseEvent(AcceptEvent))
+			{
 				LogWarning("TCPListenerWorker::Failed to close WSA event!");
 			}
 
@@ -258,15 +287,21 @@ namespace CommonEx {
 #endif
 
 			Close();
-			Thread.join();
+
+			if (Thread.joinable())
+			{
+				Thread.join();
+			}
 		}
 
-		~TCPListenerWorker() {
+		~TCPListenerWorker()
+		{
 			Stop();
 		}
 
 	private:
-		static void	WaitForRun(TCPListenerWorker* Worker, int32_t Milliseconds) noexcept {
+		static void	WaitForRun(TCPListenerWorker* Worker, int32_t Milliseconds) noexcept
+		{
 			auto Start = std::chrono::high_resolution_clock::now();
 
 			while (!Worker->Run.load())
@@ -288,7 +323,8 @@ namespace CommonEx {
 #endif
 			}
 		}
-		static void AcceptRoutine(TCPListenerWorker* Listener) noexcept {
+		static void AcceptRoutine(TCPListenerWorker* Listener) noexcept
+		{
 			TSocket listenSock = Listener->Socket;
 
 #if COMMONEX_WIN32_PLATFROM
@@ -319,11 +355,13 @@ namespace CommonEx {
 						sock = accept(listenSock, (sockaddr*)&clientInfo, NULL);
 						if (sock == INVALID_SOCKET)
 						{
-							//@TODO log
+#if VERBOSE_TLAYER
+							LogWarning("::TCPListenerWorker:: Accepted invalid socket!");
+#endif
 							continue;
 						}
 
-						Listener->OnAccept(Listener, sock, &clientInfo);
+						Listener->OnAccept(sock, &clientInfo);
 					}
 				}
 			}

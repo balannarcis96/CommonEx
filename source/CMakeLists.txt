@@ -39,6 +39,9 @@ set_target_properties(MemoryUsage PROPERTIES FOLDER "Examples")
 set_target_properties(PacketsUsage PROPERTIES FOLDER "Examples")
 set_target_properties(TaskUsage PROPERTIES FOLDER "Examples")
 set_target_properties(WorkerUsage PROPERTIES FOLDER "Examples")
+set_target_properties(AsyncDispatcherUsage PROPERTIES FOLDER "Examples")
+set_target_properties(SystemUsage PROPERTIES FOLDER "Examples")
+set_target_properties(ControllerUsage PROPERTIES FOLDER "Examples")
 
 #Tests
 add_subdirectory("tests")

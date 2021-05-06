@@ -135,14 +135,15 @@ namespace CommonEx {
 
 #include "TypeTraits.h"
 #include "Tunning.h"
+#include "Misc.h"
 #include "RStatus.h"
 #include "Diag.h"
 #include "Platform.h"
 #include "Core.h"
 #include "EntityId.h"
 #include "Stream.h"
-#include "TransportLayer.h"
 #include "Task.h"
+#include "TransportLayer.h"
 #include "Memory.h"
 #include "TObjectPool.h"
 #include "Ptr.h"
@@ -154,6 +155,9 @@ namespace CommonEx {
 #include "Buffer.h"
 #include "PacketBuilder.h"
 #include "Worker.h"
+#include "Async.h"
+#include "System.h"
+#include "ServerController.h"
 #include "ConnectionEndpoint.h"
 
 namespace CommonEx {

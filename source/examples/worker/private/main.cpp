@@ -4,11 +4,15 @@ namespace CommonEx
 {
 	ptr_t GAllocate(size_t BlockSize, size_t BlockAlignment) noexcept
 	{
+		MemoryManager::GAllocateCount++;
+
 		return _aligned_malloc(BlockSize, BlockAlignment);
 	}
 
 	void GFree(ptr_t BlockPtr) noexcept
 	{
+		MemoryManager::GFreeCount++;
+
 		_aligned_free(BlockPtr);
 	}
 }
@@ -38,10 +42,10 @@ class MyWork : public AsyncWork<MyWork, std::string, 32> {};
 
 RStatus WorkExample()
 {
-	auto work = MakeUniqueManaged<AnyWorkAsync<>>(std::move([](AnyWorkAsync<>* Self, RStatus Result) mutable noexcept
+	auto work = MakeUniqueManaged<AnyWorkAsync<>>([](AnyWorkAsync<>* Self, RStatus Result) mutable noexcept
 		{
 			LogInfo("AsyncWork!!!");
-		}));
+		});
 
 	auto work2 = MakeUniqueManaged<MyWork>();
 	work2->SetCompletionHandler([](MyWork* self, std::string* Payload, RStatus Result)
@@ -65,12 +69,9 @@ RStatus WorkExample()
 
 RStatus WorkersExample()
 {
-	//		                 <12> - Task body size (lambda capture body max size) = 32bytes
+	//		                 <12> - Task body size (lambda capture body max size) = 12bytes
 	//WorkerGroupWithMainThread<12> Group;
 	WorkerGroup<12>	Group;
-
-	constexpr auto t = sizeof(Group);
-	constexpr auto t2 = sizeof(WorkerGroup<12>::TMyWorker);
 
 	RStatus Result = Group.Initialize(
 		2 //2 workers in this group
@@ -95,9 +96,53 @@ RStatus WorkersExample()
 	return RSuccess;
 }
 
+class FrontEndController : public ServerController<true>
+{
+	using Base = ServerController;
+public:
+	RStatus Initialize() noexcept
+	{
+		StartTask = [this]() noexcept
+		{
+			LogInfo("ForntEnd StartTask");
+			return RSuccess;
+		};
+
+		StopTask = [this]()noexcept
+		{
+			LogInfo("ForntEnd StopTask");
+		};
+
+		WorkerRoutineTask = [this](WorkerBase* Worker, WorkerGroupShared* Group) noexcept
+		{
+			LogInfo("ForntEnd WorkerRoutineTask");
+
+			return RSuccess;
+		};
+
+		WorkerShutdownTask = [this](WorkerBase* Worker, WorkerGroupShared* Group) noexcept
+		{
+			LogInfo("ForntEnd WorkerShutdownTask");
+			return RSuccess;
+		};
+
+		WorkerGroupShutdownTask = [this](WorkerGroupShared* Group) noexcept
+		{
+			LogInfo("ForntEnd WorkerGroupShutdownTask");
+		};
+
+		R_TRY_L(ServerController::Initialize(2, 0, 10001, [this](TSocket Socket, sockaddr_in* Info) noexcept
+			{
+				return RSuccess;
+			}), "")
+		{}
+
+		return RSuccess;
+	}
+};
+
 int32_t main(int32_t argc, const char** argv) noexcept
 {
-
 	RTRY_S_L(InitializeCommonEx(argc, argv), 1, "Failed to InitializeCommonEx()")
 	{
 		//on success
@@ -106,7 +151,22 @@ int32_t main(int32_t argc, const char** argv) noexcept
 	{
 		//WorkExample();
 
-		WorkersExample();
+		//WorkersExample();
+		{
+			FrontEndController c;
+
+			c.Initialize();
+
+			c.Start();
+		}
+
+		{
+			FrontEndController c;
+
+			c.Initialize();
+
+			c.Start();
+		}
 	}
 
 	MemoryManager::PrintStatistics();

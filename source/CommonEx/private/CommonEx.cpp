@@ -5,7 +5,8 @@ using namespace CommonEx;
 //	Signal handlers
 
 /*Abnormal termination handler*/
-void  AbortSignal(int sig) noexcept {
+void  AbortSignal(int sig) noexcept
+{
 	Alert("Abort Signal received!");
 	LogFatal("@TODO in depth trace");
 
@@ -13,7 +14,8 @@ void  AbortSignal(int sig) noexcept {
 }
 
 /*Floating-point error handler*/
-void  FloatingPointErrorSignal(int sig) noexcept {
+void  FloatingPointErrorSignal(int sig) noexcept
+{
 	Alert("Floating Point Error Signal received!");
 	LogFatal("@TODO in depth trace");
 
@@ -21,7 +23,8 @@ void  FloatingPointErrorSignal(int sig) noexcept {
 }
 
 /*Illegal instruction handler*/
-void  IllegalInstructionSignal(int sig) noexcept {
+void  IllegalInstructionSignal(int sig) noexcept
+{
 	Alert("Illegal Instruction Signal received!");
 	LogFatal("@TODO in depth trace");
 
@@ -29,7 +32,8 @@ void  IllegalInstructionSignal(int sig) noexcept {
 }
 
 /*CTRL+C signal handler*/
-void KillSignal(int sig) {
+void KillSignal(int sig)
+{
 	Alert("Kill Signal received!");
 	LogFatal("@TODO in depth trace");
 
@@ -37,7 +41,8 @@ void KillSignal(int sig) {
 }
 
 /*Illegal storage access handler*/
-void IllegalStorageAccessSignal(int sig) {
+void IllegalStorageAccessSignal(int sig)
+{
 	Alert("Illegal Storage Access Signal received!");
 	LogFatal("@TODO in depth trace");
 
@@ -45,7 +50,8 @@ void IllegalStorageAccessSignal(int sig) {
 }
 
 /*Termination request handler*/
-void TerminationSignal(int sig) {
+void TerminationSignal(int sig)
+{
 	LogFatal("Abort Signal received!");
 	LogFatal("@TODO in depth trace");
 
@@ -53,7 +59,8 @@ void TerminationSignal(int sig) {
 }
 
 //Diag.h
-namespace CommonEx {
+namespace CommonEx
+{
 	//Global diagnostic and logging tool
 	GlobalDiagnostics GlobalDiagnostics::GDiag;
 
@@ -96,10 +103,23 @@ namespace CommonEx {
 	}
 }
 
+#if COMMONEX_WIN32_PLATFROM
+WSAData		GWSAData;
+#else
+#error @TODO InitializeCommonEx()
+#endif
+
 //CommonEx.h
-namespace CommonEx {
+namespace CommonEx
+{
 	RStatus InitializeCommonEx(int32_t argc, const char** argv)noexcept
 	{
+#if COMMONEX_WIN32_PLATFROM
+		R_TRY_L((RStatus)WSAStartup(MAKEWORD(2, 2), &GWSAData), "InitializeCommonEx() -> Failed to WSAStartup() !") {}
+#else
+#error @TODO InitializeCommonEx()
+#endif
+
 		R_TRY_L(MemoryManager::Initialize(), "InitializeCommonEx() -> Failed to MemoryManager::Initialize() !") {}
 		R_TRY_L(GlobalDiagnostics::GDiag.Initialize(), "InitializeCommonEx() -> Failed to GlobalDiagnostics::Initialize()() !") {}
 
@@ -108,6 +128,12 @@ namespace CommonEx {
 
 	RStatus ShutdownCommonEx()noexcept
 	{
+#if COMMONEX_WIN32_PLATFROM
+		
+#else
+#error @TODO ShutdownCommonEx()
+#endif
+
 		R_TRY_L(MemoryManager::Shutdown(), "ShutdownCommonEx() -> Failed to MemoryManager::Shutdown() !") {}
 		R_TRY_L(GlobalDiagnostics::GDiag.Shutdown(), "InitializeCommonEx() -> Failed to GlobalDiagnostics::Shutdown()() !") {}
 
@@ -116,7 +142,8 @@ namespace CommonEx {
 }
 
 //MemoryManager.h
-namespace CommonEx {
+namespace CommonEx
+{
 #ifdef MEMEX_STATISTICS
 	std::atomic<size_t> MemoryManager::CustomSizeDeallocations;
 	std::atomic<size_t> MemoryManager::CustomSizeAllocations;
