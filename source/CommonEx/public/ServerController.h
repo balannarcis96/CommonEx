@@ -2,7 +2,7 @@
 
 namespace CommonEx
 {
-	class Controller : public System
+	class Controller 
 	{
 
 	};

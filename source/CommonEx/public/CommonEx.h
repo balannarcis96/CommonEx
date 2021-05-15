@@ -90,6 +90,7 @@
 #include <cassert>
 #include <queue>
 #include <mutex>
+#include <fvec.h>
 
 //## From vcruntime
 // [[nodiscard]] attributes on STL functions
@@ -118,6 +119,9 @@
 #ifndef ALIGNMENT
 #define ALIGNMENT alignof(size_t)
 #endif
+
+//Empty macro used to keep Visual Studio from indenting
+#define PTR
 
 namespace CommonEx {
 	/*------------------------------------------------------------
@@ -200,6 +204,8 @@ namespace CommonEx {
 #include "Diag.h"
 #include "Platform.h"
 #include "Core.h"
+#include "SMathSSE.h"
+#include "SMath.h"
 #include "EntityId.h"
 #include "Stream.h"
 #include "Task.h"
@@ -216,7 +222,7 @@ namespace CommonEx {
 #include "PacketBuilder.h"
 #include "Worker.h"
 #include "Async.h"
-#include "System.h"
+#include "Database/Adaptor.h"
 #include "ServerController.h"
 #include "ConnectionEndpoint.h"
 

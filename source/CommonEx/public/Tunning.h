@@ -103,5 +103,16 @@ namespace CommonEx {
 		TaskEx
 	  ------------------------------------------------------------*/
 	constexpr size_t CTaskExBodySize = 32;
+
+	/*------------------------------------------------------------
+		Mysql
+	  ------------------------------------------------------------*/
+	constexpr auto CMysqlConnectionTimeout = PTR					60 * 60; //1h
+	constexpr auto CMysqlEnableMultistatements = PTR				true;
+	constexpr auto CDBStatementQueryMaxSize = PTR					4096;
+	constexpr auto CDBStatementMaxInputParams = PTR					128;
+	constexpr auto CDBStatementMaxOutputParams = PTR				128;
+	constexpr auto CDBReacquireConnectionTries = PTR				2;
+
 #pragma endregion
 }

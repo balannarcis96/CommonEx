@@ -9,17 +9,15 @@
  *
  */
 
-//Empty macro used to keep Visual Studio from indenting
-#define PTR
+// Void * pointer type.
+using ptr_t = void*;
+
+using ulong_t = unsigned long;
+
+using long_t = long;
 
 namespace CommonEx {
-	// Void * pointer type.
-	using ptr_t = void*;
-
-	using ulong_t = unsigned long;
-
-	using long_t = long;
-
+	
 	//Read macros
 #define r_8	(_raw)		( *reinterpret_cast<int8_t*>	(_raw) )
 #define r_u8(_raw)		( *reinterpret_cast<uint8_t*>	(_raw) )

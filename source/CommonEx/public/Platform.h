@@ -15,12 +15,14 @@
 #include "FreeBSDPlatform.h"
 #endif
 
-namespace CommonEx {
+namespace CommonEx
+{
 #if COMMONEX_WIN32_PLATFROM
 	using CurrentAsyncIOSystem = Win32AsyncIO;
-	
+
 	template<typename ...Types>
-	inline void Alert(const char* Format, Types... Args)  noexcept {
+	inline void Alert(const char* Format, Types... Args)  noexcept
+	{
 		const std::string Msg = fmt::format(Format, Args...);
 #if COMMONEX_WIN32_PLATFROM
 		MessageBoxA(
@@ -34,7 +36,8 @@ namespace CommonEx {
 	}
 
 	template<typename ...Types>
-	inline void Alert(const wchar_t* Format, Types... Args)  noexcept {
+	inline void Alert(const wchar_t* Format, Types... Args)  noexcept
+	{
 		const std::wstring Msg = fmt::format(Format, Args...);
 #if COMMONEX_WIN32_PLATFROM
 
@@ -48,8 +51,14 @@ namespace CommonEx {
 #endif
 	}
 
+	FORCEINLINE int32_t GGetLastError() noexcept
+	{
+		return (int32_t)GetLastError();
+	}
 
 #else 
 	static_assert(false, "@TODO");
 #endif
 }
+
+#include <mysql.h>

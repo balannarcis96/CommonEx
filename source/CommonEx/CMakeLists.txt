@@ -7,8 +7,8 @@ file( GLOB_RECURSE _private_files LIST_DIRECTORIES false "${_src_root_path}/priv
 file( GLOB_RECURSE _public_files LIST_DIRECTORIES false "${_src_root_path}/public/*.h" )
 
 add_library (CommonEx STATIC 
-            ${_public_files} 
             ${_private_files}
+            ${_public_files} 
             )
 			
 source_group("private"	FILES ${_private_files})
@@ -20,4 +20,4 @@ set_property(TARGET CommonEx PROPERTY CXX_STANDARD 20)
 target_include_directories(CommonEx PUBLIC "${_src_root_path}/public/")
 
 target_link_libraries(CommonEx PUBLIC fmt)
-target_link_libraries(CommonEx PUBLIC delegate)
+target_link_libraries(CommonEx PUBLIC mysql)
