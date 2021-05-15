@@ -35,8 +35,13 @@ int32_t main(int32_t argc, const char** argv) noexcept {
 	}
 
 	{
-		auto o1 = MakeUniqueManaged<TypeA>();
+		MPtr<TypeA> o1 = MakeUniqueManaged<TypeA>();
 		auto o2 = MakeUniqueManaged<TypeA>(55);
+
+		auto o3 = MakeSharedManaged<TypeA>();
+
+
+
 	}
 
 	{

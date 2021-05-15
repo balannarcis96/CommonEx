@@ -72,7 +72,12 @@ namespace CommonEx {
 
 			if constexpr (bUseSpinLock) {
 				{ //Critical section
+					static std::atomic_int32_t Test;
 					SpinLockScopeGuard Guard(&SpinLock);
+
+					Test++;
+					assert(Test == 1);
+					Test--;
 
 					const uint64_t InsPos = TailPosition++;
 

@@ -76,6 +76,9 @@ namespace CommonEx {
 
 	template<typename ...Types>
 	inline void Log(const char* Format, Types... Args)  noexcept {
+		//static std::mutex mtx;
+		//std::lock_guard<std::mutex> guard(mtx);
+
 		fmt::print(Format, Args...);
 
 		//@TODO to disk buffered logging

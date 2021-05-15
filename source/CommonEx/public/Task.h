@@ -206,25 +206,7 @@ namespace CommonEx
 				return *this;
 			}
 
-			if (!Other)
-			{
-				Clear();
-				return *this;
-			}
-
-			Handler = Other.Handler;
-			DestroyStub = Other.DestroyStub;
-
-			if (memcpy_s(
-				Body,
-				BodySize,
-				Other.Body,
-				BodySize
-			))
-			{
-				LogFatal("_TaskEx::operator=(const _Task&) Failed to mempcy_s!");
-				abort();
-			}
+			Mirror(Other);
 
 			return *this;
 		}
@@ -248,6 +230,7 @@ namespace CommonEx
 
 			Handler = Other.Handler;
 			DestroyStub = Other.DestroyStub;
+			CopyStub = Other.CopyStub;
 
 			if (memcpy_s(
 				Body,
@@ -273,6 +256,7 @@ namespace CommonEx
 		{
 			this->operator=<TLambda>(Other);
 		}
+
 		template<typename Lambda>
 		FORCEINLINE _TaskEx(Lambda&& Other) noexcept
 		{
@@ -345,20 +329,53 @@ namespace CommonEx
 			Handler = nullptr;
 		}
 
+		FORCEINLINE void Mirror(const MyType& Other)noexcept
+		{
+			Handler = Other.Handler;
+			DestroyStub = Other.DestroyStub;
+			CopyStub = Other.CopyStub;
+
+			if (CopyStub)
+			{
+				typedef void(*CopyStubType)(ptr_t, const ptr_t) noexcept;
+
+				((CopyStubType)CopyStub)(GetBody(), Other.GetBody());
+			}
+			else
+			{
+				if (memcpy_s(
+					Body,
+					BodySize,
+					Other.Body,
+					BodySize
+				))
+				{
+					LogFatal("_TaskEx::operator=(const _Task&) Failed to mempcy_s!");
+					abort();
+				}
+			}
+		}
+
 	private:
 		template<typename Lambda>
 		FORCEINLINE void BuildHandler(const Lambda& ByConstRef) noexcept
 		{
 			static_assert(sizeof(Lambda) <= CTaskExBodySize, "TaskEx<> Lambda type is bigger than the body, please adjust CTaskExBodySize");
 
-			if constexpr (std::is_destructible_v<Lambda>)
+			if constexpr (std::is_nothrow_destructible_v<Lambda>)
 			{
 				DestroyStub = (ptr_t)&DestroyStubFunction<Lambda>;
+			}
+			else if constexpr (std::is_destructible_v<Lambda>)
+			{
+				static_assert(false, "_TaskEx::BuildHandler<Lambda>() Lambda must be nothrow destructible");
 			}
 			else
 			{
 				DestroyStub = nullptr;
 			}
+
+			CopyStub = (ptr_t)&CopyStubFunction<Lambda>;
 
 			Handler = &CallStub<Lambda>;
 
@@ -370,14 +387,20 @@ namespace CommonEx
 		{
 			static_assert(sizeof(Lambda) <= CTaskExBodySize, "TaskEx<> Lambda type is bigger than the body, please adjust CTaskExBodySize");
 
-			if constexpr (std::is_destructible_v<Lambda>)
+			if constexpr (std::is_nothrow_destructible_v<Lambda>)
 			{
 				DestroyStub = (ptr_t)&DestroyStubFunction<Lambda>;
+			}
+			else if constexpr (std::is_destructible_v<Lambda>)
+			{
+				static_assert(false, "_TaskEx::BuildHandler<Lambda>() Lambda must be nothrow destructible");
 			}
 			else
 			{
 				DestroyStub = nullptr;
 			}
+
+			CopyStub = (ptr_t)&CopyStubFunction<Lambda>;
 
 			Handler = &CallStub<Lambda>;
 
@@ -394,14 +417,24 @@ namespace CommonEx
 		template<typename Lambda>
 		FORCEINLINE static void DestroyStubFunction(ptr_t Body)noexcept
 		{
-			if constexpr (std::is_destructible_v<Lambda>)
-			{
-				((Lambda*)Body)->~Lambda();
-			}
+			((Lambda*)Body)->~Lambda();
+		}
+
+		template<typename Lambda>
+		FORCEINLINE static void CopyStubFunction(ptr_t Body, const ptr_t SourceBody)noexcept
+		{
+			((Lambda*)Body)->~Lambda();
+
+			new (Body) Lambda(*((const Lambda*)SourceBody));
 		}
 
 	private:
-		FORCEINLINE constexpr ptr_t GetBody() noexcept
+		FORCEINLINE ptr_t GetBody() noexcept
+		{
+			return (ptr_t)(Body);
+		}
+
+		FORCEINLINE const ptr_t GetBody() const noexcept
 		{
 			return (ptr_t)(Body);
 		}
@@ -413,6 +446,7 @@ namespace CommonEx
 
 		HandlerType			Handler{ nullptr };
 		ptr_t				DestroyStub{ nullptr };
+		ptr_t				CopyStub{ nullptr };
 
 		//Body must be last!
 		uint8_t				Body[BodySize]{ 0 };

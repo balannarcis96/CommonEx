@@ -9,10 +9,6 @@
  *
  */
 
-#ifndef ALIGNMENT
-#define ALIGNMENT alignof(size_t)
-#endif
-
 //Empty macro used to keep Visual Studio from indenting
 #define PTR
 

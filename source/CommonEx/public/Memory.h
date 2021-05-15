@@ -17,7 +17,7 @@ namespace CommonEx
 	class alignas(ALIGNMENT) NotSharedMemoryResourceBase
 	{
 	public:
-		//Destroy callback (deleter)
+		//Destroy callback (deleter) void(bool bCallDestructor)
 		MemoryBlockDestroyCallback	Destroy{  };
 	};
 
@@ -25,7 +25,6 @@ namespace CommonEx
 	class alignas(ALIGNMENT) MemoryResourceBase: public NotSharedMemoryResourceBase
 	{
 	public:
-
 		//Object's reference count
 		mutable uint32_t RefCount{ 1 };
 
@@ -43,6 +42,12 @@ namespace CommonEx
 		//Is this instance waiting to be destroyed ?
 		std::atomic_flag bIsPendingDestroy{};
 
+		/**
+		 * \brief Set the bIsPendingDestroy flag value and notifies other waiting threads if possible.
+		 * 
+		 * \param bValue New bIsPendingDestroy value.
+		 * \param bNotify If true it will notify all waiting threads.
+		 */
 		FORCEINLINE void SetIsPendingDestroy(bool bValue, bool bNotify = true)noexcept
 		{
 			if (bValue)
@@ -60,16 +65,32 @@ namespace CommonEx
 			}
 		}
 
+		/**
+		 * \return true if this instance is pending destroy.
+		 */
 		FORCEINLINE bool IsPendingDestroy() const noexcept
 		{
 			return bIsPendingDestroy.test(std::memory_order::acquire);
 		}
 
+		FORCEINLINE uint32_t GetRefCount() const noexcept
+		{
+			return InterlockedCompareExchange(&RefCount, 0, 0);
+		}
+
+		/**
+		 * \brief Wait for the bIsPendingDestroy to change its value to [bValue].
+		 * 
+		 * \param bValue The value to wait for.
+		 */
 		FORCEINLINE void WaitForPendingDestroy(bool bValue) noexcept
 		{
 			bIsPendingDestroy.wait(bValue, std::memory_order::acquire);
 		}
 
+		/**
+		 * \brief Reinitialize the main values of this instance.
+		 */
 		FORCEINLINE void ResetResource()noexcept
 		{
 			//clear ref count
@@ -84,6 +105,11 @@ namespace CommonEx
 	class MemoryResource : public MemoryResourceBase
 	{
 	public:
+		/**
+		 * \brief Add 1 to the reference count of this instance. 
+		 * 
+		 * \important Only call this function while holding a valid reference this the instance.
+		 */
 		FORCEINLINE void AddReference() const noexcept
 		{
 			if constexpr (bAtomicRef)
@@ -108,6 +134,11 @@ namespace CommonEx
 			}
 		}
 
+		/**
+		 * \brief Remove 1 from the reference count of this instance.
+		 * 
+		 * \returns true if this call Removed the last reference (RefCount == 0) otherwise it returns false.
+		 */
 		FORCEINLINE bool ReleaseReference() const noexcept
 		{
 			if constexpr (bAtomicRef)
@@ -125,6 +156,32 @@ namespace CommonEx
 				{
 					return true;
 				}
+			}
+
+			return false;
+		}
+
+		/**
+		 * \brief Remove 1 from the reference count of this instance and tried to call the Destroy(true) handler [See full description].
+		 * 
+		 * \important If the Destroy handler is not set, delete is called on the [this] pointer.
+		 * 
+		 * \returns true if the current call removed the last reference (RefCount == 0) otherwise it returns false.
+		 */
+		FORCEINLINE bool ReleaseReferenceAndDestroy() noexcept
+		{
+			if (ReleaseReference())
+			{
+				if (Destroy)
+				{
+					Destroy(true);
+				}
+				else
+				{
+					GFreeCpp(this);
+				}
+
+				return true;
 			}
 
 			return false;

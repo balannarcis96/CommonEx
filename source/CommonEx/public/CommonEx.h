@@ -76,6 +76,22 @@ namespace CommonEx {
 #define NOVTABLE noop
 #endif
 
+#ifndef _LIKELY
+#if _HAS_CXX20
+#define _LIKELY [[likely]]
+#else
+#define _LIKELY 
+#endif
+#endif
+
+#ifndef _FALLTHROUGH
+#if _HAS_CXX20
+#define _FALLTHROUGH [[fallthrough]]
+#else
+#define _FALLTHROUGH
+#endif
+#endif
+
 // Standard libs
 #include <string>
 #include <string_view>
@@ -88,6 +104,9 @@ namespace CommonEx {
 #include <limits>
 #include <optional>
 #include <chrono>
+#include <cassert>
+#include <queue>
+#include <mutex>
 
 //## From vcruntime
 // [[nodiscard]] attributes on STL functions
@@ -113,6 +132,10 @@ namespace CommonEx {
 #define FORCEINLINE __forceinline
 #endif
 
+#ifndef ALIGNMENT
+#define ALIGNMENT alignof(size_t)
+#endif
+
 namespace CommonEx {
 	/*------------------------------------------------------------
 		Buffer interface
@@ -131,6 +154,60 @@ namespace CommonEx {
 
 	// Global deallocate block of memory
 	extern void GFree(void* BlockPtr) noexcept;
+
+	template<typename T>
+	FORCEINLINE void GDestructNothrow(T* Ptr)noexcept
+	{
+		if constexpr (std::is_nothrow_destructible_v<T>)
+		{
+			Ptr->~T();
+		}
+		else if constexpr (std::is_destructible_v<T>)
+		{
+			static_assert(false, "GDestructNothrow<T>() T must be nothrow destructible");
+		}
+	}
+
+	template<typename T, typename ...TArgs>
+	FORCEINLINE constexpr void GConstructNothrow(void* Ptr, TArgs... Args)noexcept
+	{
+		if constexpr (sizeof...(TArgs) == 0)
+		{
+			new (Ptr) T();
+
+			//if constexpr (std::is_nothrow_default_constructible_v<T>)
+			//{
+			//	new (Ptr) T();
+			//}
+			//else if constexpr (std::is_default_constructible_v<T>)
+			//{
+			//	static_assert(false, "GConstructNothrow<T,TArgs>() T must be nothrow default constructible");
+			//}
+		}
+		else
+		{ 
+			//@TODO check if specific nothrow constructor exists on type T
+
+			new (Ptr) T(std::forward<TArgs>(Args)...);
+		}
+	}
+
+	template<typename T>
+	FORCEINLINE void GFreeCpp(T* Ptr)noexcept
+	{
+		GDestructNothrow<T>(Ptr);
+		GFree(Ptr);
+	}
+
+	template<typename T, typename ...TArgs>
+	FORCEINLINE T* GAllocateCpp(TArgs... Args)noexcept
+	{
+		auto* Block = GAllocate(sizeof(T), ALIGNMENT);
+
+		GConstructNothrow<T, TArgs...>(Block, std::forward<TArgs>(Args)...);
+
+		return (T*)Block;
+	}
 }
 
 #include "TypeTraits.h"
