@@ -1,5 +1,7 @@
 #pragma once
 
+#define _HAS_EXCEPTIONS				0
+
 //Verbose logging
 #ifndef RVERBOSE
 #define RVERBOSE 1
@@ -38,6 +40,15 @@
   ------------------------------------------------------------*/
 #include <fmt/core.h>
 #include <fmt/color.h>
+
+/*------------------------------------------------------------
+  Datastore library
+	  Author:		Narjazz96
+	  Url:		-
+	  Licence:	Copyright Narjazz96
+------------------------------------------------------------*/
+#include <Datastore.h>
+using RawDataStore = Datacenter::SkyalkeServerDatacenter;
 
 #undef CONCAT_
 #define CONCAT_(x,y) x##y
@@ -203,6 +214,7 @@ namespace CommonEx {
 #include "RStatus.h"
 #include "Diag.h"
 #include "Platform.h"
+#include "Store.h"
 #include "Core.h"
 #include "SMathSSE.h"
 #include "SMath.h"

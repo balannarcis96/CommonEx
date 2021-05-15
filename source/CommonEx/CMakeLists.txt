@@ -21,3 +21,6 @@ target_include_directories(CommonEx PUBLIC "${_src_root_path}/public/")
 
 target_link_libraries(CommonEx PUBLIC fmt)
 target_link_libraries(CommonEx PUBLIC mysql)
+target_link_libraries(CommonEx PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(CommonEx PUBLIC rapidXML)
+target_link_libraries(CommonEx PUBLIC Datastore_Lib)
