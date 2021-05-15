@@ -39,23 +39,6 @@
 #include <fmt/core.h>
 #include <fmt/color.h>
 
-  /*------------------------------------------------------------
-	  The Impossibly Fast C++ Delegates
-		  Author:		Sergey Alexandrovich Kryukov
-		  Url:		https://www.codeproject.com/Articles/1170503/The-Impossibly-Fast-Cplusplus-Delegates-Fixed
-		  Licence:	https://opensource.org/licenses/mit-license.php (MIT)
-  ------------------------------------------------------------*/
-#include <Delegate.h>
-#include <MultiCastDelegate.h>
-
-namespace CommonEx {
-	template<typename ReturnType, typename ...Params>
-	using Delegate = SA::delegate<ReturnType(Params...)>;
-
-	template<typename ReturnType, typename ...Params>
-	using MulticastDelegate = SA::multicast_delegate<ReturnType(Params...)>;
-}
-
 #undef CONCAT_
 #define CONCAT_(x,y) x##y
 

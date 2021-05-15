@@ -76,10 +76,11 @@ void SmallTests(int argc, const char** argv) noexcept
 void AsyncDispatcherUsage(int argc, const char** argv) noexcept
 {
 	auto d = MakeSharedManagedEx<TypeA>();
+	bool fTest = false;
 
 	WorkerGroup<32> wg;
 	{
-		RStatus Result = wg.Initialize(1,
+		RStatus Result = wg.Initialize(3,
 			[d](WorkerBase* Self, WorkerGroupShared* Group) mutable
 			{
 				int  i = 8 * 60;
@@ -93,27 +94,31 @@ void AsyncDispatcherUsage(int argc, const char** argv) noexcept
 
 				return RSuccess;
 			},
-			[dPtr = d.Get()](WorkerBase* Self, WorkerGroupShared* Group) mutable
+			[dPtr = d.Get(), &fTest](WorkerBase* Self, WorkerGroupShared* Group) mutable
 			{
 				Async::AsyncSystem::InitializeThread();
-
 				LogInfo("Start!");
-				dPtr->DoAfterAsync(1000, &TypeA::DoA, 1);
-				dPtr->DoAfterAsync(2000, &TypeA::DoA, 2);
-				dPtr->DoAfterAsync(3000, &TypeA::DoA, 3);
-				dPtr->DoAfterAsync(4000, &TypeA::DoA, 4);
 
-				dPtr->DoAfterAsync(5000,
-					[]()
-					{
-						LogInfo("L 1()");
-					});
+				if (!fTest)
+				{
+					fTest = true;
+					dPtr->DoAfterAsync(1000, &TypeA::DoA, 1);
+					dPtr->DoAfterAsync(2000, &TypeA::DoA, 2);
+					dPtr->DoAfterAsync(3000, &TypeA::DoA, 3);
+					dPtr->DoAfterAsync(4000, &TypeA::DoA, 4);
 
-				dPtr->DoAfterAsync(6000,
-					[]()
-					{
-						LogInfo("L 2()");
-					});
+					dPtr->DoAfterAsync(5000,
+						[]()
+						{
+							LogInfo("L 1()");
+						});
+
+					dPtr->DoAfterAsync(6000,
+						[]()
+						{
+							LogInfo("L 2()");
+						});
+				}
 
 				return RSuccess;
 			},

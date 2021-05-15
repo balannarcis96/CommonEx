@@ -14,9 +14,7 @@ namespace CommonEx
 			using TExecuteTask = _TaskEx<CTaskBaseMaxSize, void(void)>;
 
 			AsyncTaskBase() noexcept {}
-			~AsyncTaskBase() noexcept {
-				LogInfo("~AsyncTaskBase()");
-			}
+
 			FORCEINLINE void ExecuteTask() noexcept
 			{
 				OnExecute();
