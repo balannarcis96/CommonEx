@@ -1,6 +1,7 @@
 #include "../public/CommonEx.h"
 
 using namespace CommonEx;
+using namespace CommonEx::Utils;
 
 //	Signal handlers
 
@@ -120,8 +121,11 @@ namespace CommonEx
 #error @TODO InitializeCommonEx()
 #endif
 
-		R_TRY_L(MemoryManager::Initialize(), "InitializeCommonEx() -> Failed to MemoryManager::Initialize() !") {}
-		R_TRY_L(GlobalDiagnostics::GDiag.Initialize(), "InitializeCommonEx() -> Failed to GlobalDiagnostics::Initialize()() !") {}
+		R_TRY_L(GlobalDiagnostics::GDiag.Initialize(), "CommonEx::InitializeCommonEx() -> Failed to GlobalDiagnostics::Initialize()() !") {}
+		R_TRY_L(MemoryManager::Initialize(), "CommonEx::InitializeCommonEx() -> Failed to MemoryManager::Initialize() !") {}
+		R_TRY_L(TSendBuffer::Initialize(), "CommonEx:: Failed to Initialize TSendBuffer Pools"){}
+		R_TRY_L(TRecvBuffer::Initialize(), "CommonEx:: Failed to Initialize TRecvBuffer Pools"){}
+		R_TRY_L(CurrentAsyncIOSystem::Initialize(), " CommonEx:: Failed to initialize the AsyncIO system (Win32AsyncIO)!") {}
 
 		return RSuccess;
 	}
@@ -149,3 +153,36 @@ namespace CommonEx
 	std::atomic<size_t> MemoryManager::CustomSizeAllocations;
 #endif
 }
+
+//Utils.h
+
+#if COMMONEX_WIN32_PLATFROM
+bool GWideCharToMultiByte(const wchar_t* InBuffer, char* OutBuffer, int32_t OutBufferSize) noexcept
+{
+	int32_t result = 0;
+	if ((result = ::WideCharToMultiByte(CP_UTF8, 0, InBuffer, (int32_t)wcslen(InBuffer), OutBuffer, OutBufferSize, 0, 0)) == 0)
+	{
+		return false;
+	}
+
+	OutBuffer[result] = '\0';
+
+	return true;
+}
+
+bool GMultiByteToWideChar(const char* InBuffer, wchar_t* OutBuffer, int32_t OutBufferSize) noexcept
+{
+	int32_t result = 0;
+	if ((result = ::MultiByteToWideChar(CP_UTF8, 0, InBuffer, (int32_t)strlen(InBuffer), OutBuffer, OutBufferSize)) == 0)
+	{
+		return false;
+	}
+
+	OutBuffer[result] = '\0';
+
+	return true;
+}
+
+#else 
+static_assert(false, "@TODO");
+#endif

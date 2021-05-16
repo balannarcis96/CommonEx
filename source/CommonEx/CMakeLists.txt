@@ -7,8 +7,8 @@ file( GLOB_RECURSE _private_files LIST_DIRECTORIES false "${_src_root_path}/priv
 file( GLOB_RECURSE _public_files LIST_DIRECTORIES false "${_src_root_path}/public/*.h" )
 
 add_library (CommonEx STATIC 
-            ${_private_files}
             ${_public_files} 
+            ${_private_files}
             )
 			
 source_group("private"	FILES ${_private_files})
